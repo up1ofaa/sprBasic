@@ -44,7 +44,20 @@ WEB-INF/config/dispatcher-servlet.xml
 	<beans:list>
 		<benas:value>application/json</beans:value>
         </beans:list> 
+</beans:bean>
+	
+<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+	<beans:property name="maxUploadSize" value="100000000"/>
 </beans:bean>	
+
+<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver" 
+	    p:order="1"
+	    p:viewClass="org.springframework.web.servlet.view.JstlView"
+	    p:prefix="/WEB-INF/views/"
+	    p:suffix=".jsp"
+	    />
+	
+
     
   <!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
 	<!-- view resolver(뷰리졸버, 뷰 해석기 -->
