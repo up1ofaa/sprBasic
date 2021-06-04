@@ -25,7 +25,26 @@ WEB-INF/config/dispatcher-servlet.xml
         </beans:list>  
     </beans:property>  
   </beans:bean>
-	
+	  
+<beans:bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver"/>
+<beans:bean id="localeChangeInterceptor" class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+	<beans:property name="paramName" value="language"/>
+</beans:bean>	
+
+<beans:bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" p:order="1">
+      <beans:property name="messageConvertoers">
+        <beans:list>
+            <benas:ref bean="mappingJackson2HttpMessageConverter">
+        </beans:list>  
+    </beans:property>  
+  </beans:bean>	  
+
+<beans:bean id="mappingJackson2HttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+	<beans:property name="supportedMediaTypes"/>
+	<beans:list>
+		<benas:value>application/json</beans:value>
+        </beans:list> 
+</beans:bean>	
     
   <!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
 	<!-- view resolver(뷰리졸버, 뷰 해석기 -->
