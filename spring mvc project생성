@@ -30,3 +30,4 @@ module이 생성되고 나며 maven빌드가 진행되고 최조적으로 콘솔
 dispatcher-servlet.xml, applicationContext.xml이 추가되지 않아 직접 생성하고 작성해줘야되서 번거롭다.
 3) dispatcher-servlet.xml, applicationContext.xml을 WEB-INF디렉토리 하위에 spring-config디렉토리를 생성하여 이동시켜준다.
 3. Spring 관련 설정 수정 및 추가, 디렉토리 생성 및 role설정
+https://doublesprogramming.tistory.com/171?category=667155
