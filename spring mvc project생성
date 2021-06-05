@@ -5,3 +5,28 @@ spring mvc project
 3.스프링 관련설정, 디렉토리 생성 및 설정을 한다.
 4. tomcat 서버 설정을 한다.
 5.기본/테스트 package와 views 디렉토리를 생성한다
+
+src
+----main
+      ----java:java code
+      ----resources : mapper, log관련 설정 xml(log4j.xml)
+      ----webapp : web디렉토리
+            ----resource: js,css등의 정적자원들
+            ----WEB-INF :web information 디렉토리
+                    ----spring-config :spring관련 설정 xml(dispatcher-servlet.xml, applicationContextroot.xml
+                    ----views:jsp
+----test: test관련 디렉토리
+      ----java:java test code
+      ----resources: test관련 resources
+pome.xml
+
+1. maven module 생성하기
+file>new>module>create from archetype : mave-archetype-webapp선택한다.
+groupId, artifact를 작성한다.
+module이 생성되고 나며 maven빌드가 진행되고 최조적으로 콘솔창에 maven BUILD SUCCESS라는 메시지가 뜨면 성공적으로 생성된것
+2. spring mvc추가
+1) 생성된 module 우클릭 후 add framework support...선택한다
+2) spring mvc 선택한다. 이때 기존의 라이브러리를 사용하는 것보다 다운로드를 선택해서 진행하는 것이 좋다
+dispatcher-servlet.xml, applicationContext.xml이 추가되지 않아 직접 생성하고 작성해줘야되서 번거롭다.
+3) dispatcher-servlet.xml, applicationContext.xml을 WEB-INF디렉토리 하위에 spring-config디렉토리를 생성하여 이동시켜준다.
+3. Spring 관련 설정 수정 및 추가, 디렉토리 생성 및 role설정
