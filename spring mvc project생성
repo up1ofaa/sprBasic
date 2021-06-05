@@ -1,0 +1,7 @@
+spring mvc project
+
+1.maven module을 생성한다
+2.maven module에 spring framework 중에서 spring mvc 를 추가한다.
+3.스프링 관련설정, 디렉토리 생성 및 설정을 한다.
+4. tomcat 서버 설정을 한다.
+5.기본/테스트 package와 views 디렉토리를 생성한다
