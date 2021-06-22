@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans
+	xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+	<!-- <beans:bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource"> 
+		<beans:property name="basenames"> <beans:list> <beans:value>classpath:/message/message-common</beans:value> 
+		<beans:value>classpath:/rte/fdl/idgnr/messages/idgnr</beans:value> <beans:value>classpath:/rte/fdl/property/messages/properties</beans:value> 
+		</beans:list> </beans:property> <beans:property name="cacheSeconds"> <beans:value>60</beans:value> 
+		</beans:property> </beans:bean> -->
+    <context:component-scan base-package="com.hanwhalife.nbm"/>
+   
+	<beans:bean id="leaveaTrace"
+		class="egovframework.rte.fdl.cmmn.trace.LeaveaTrace">
+		<beans:property name="traceHandlerServices">
+			<beans:list>
+				<beans:ref bean="traceHandlerService" />
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="traceHandlerService"
+		class="egovframework.rte.fdl.cmmn.trace.manager.DefaultTraceHandleManager">
+		<beans:property name="reqExpMatcher">
+			<beans:ref bean="antPathMater" />
+		</beans:property>
+		<beans:property name="patterns">
+			<beans:list>
+				<beans:value>*</beans:value>
+			</beans:list>
+		</beans:property>
+		<beans:property name="handlers">
+			<beans:list>
+				<beans:ref bean="defaultTraceHandler" />
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+	<annotation-driven />
+	<beans:bean id="antPathMater"
+		class="org.springframework.util.AntPathMatcher" />
+	<beans:bean id="defaultTraceHandler"
+		class="egovframework.rte.fdl.cmmn.trace.handler.DefaultTraceHandler" />
+
+	<!-- <beans:bean class="egovframework.example.handler.CommonInterceptor" 
+		/> -->
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources 
+		in the /WEB-INF/views directory -->
+	<beans:bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+
+	<resources mapping="/websquare/**" location="/websquare/" />
+	<resources mapping="/online/**" location="/online/" />
+	<resources mapping="/ui/**" location="/ui/" />
+
+	<!-- commonInterceptor -->
+	<beans:bean id="commonInterceptor"
+		class="com.hanwhalife.nbm.handler.CommonInterceptor" />
+	<interceptors>
+		<interceptor>
+			<mapping path="/**" />
+			<mapping path="/*" />
+			<exclude-mapping path="/resources/**" />
+			<exclude-mapping path="/websquare/**" />
+			<exclude-mapping path="/online/**" />
+			<!-- <exclude-mapping path="/sso/**" />
+			<exclude-mapping path="/*.do" />
+			<exclude-mapping path="/**/*.do" /> -->
+			<beans:ref bean="commonInterceptor" />
+		</interceptor>
+	</interceptors>
+
+
+</beans:beans>
