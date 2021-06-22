@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 주의 -->
+<!-- 이 파일은 개발기와 운영기가 따로 관리되는 파일입니다. -->
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %5p [%c] %m%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <!-- egovframework, com.hanwhalife.nbm => DEBUG, other => INFO -->
+        <!-- 개발 -->
+        <Logger name="egovframework" level="DEBUG" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="com.hanwhalife.nbm" level="DEBUG" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="java.sql" level="INFO" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+          <!-- log SQL with timing information, post execution -->
+        <Logger name="jdbc.sqltiming" level="INFO" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <!-- SQL문만을 로그로 남기며 PreparedStatement일 경우 관련된 argument 값으로 대체된 SQL문을 기록함  -->
+				<logger name="jdbc.sqlonly" level="INFO" additivity="false">
+					<AppenderRef ref="console" />
+				</logger>
+		    <Logger name="org.springframework" level="INFO" additivity="false">
+		        <AppenderRef ref="console" />
+		    </Logger>
+		    <Root level="DEBUG">
+		        <AppenderRef ref="console" />
+		    </Root>
+        <!-- 운영     
+        <Logger name="egovframework" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="com.hanwhalife.nbm" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        <Logger name="java.sql" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+          log SQL with timing information, post execution
+        <Logger name="jdbc.sqltiming" level="ERROR" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        SQL문만을 로그로 남기며 PreparedStatement일 경우 관련된 argument 값으로 대체된 SQL문을 기록함 
+				<logger name="jdbc.sqlonly" level="ERROR" additivity="false">
+					<AppenderRef ref="console" />
+				</logger>
+		    <Logger name="org.springframework" level="ERROR" additivity="false">
+		        <AppenderRef ref="console" />
+		    </Logger>
+		    <Root level="ERROR">
+		        <AppenderRef ref="console" />
+		    </Root>
+		     -->
+    </Loggers>
+</Configuration>
