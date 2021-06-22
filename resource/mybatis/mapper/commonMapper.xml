@@ -1,0 +1,890 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="commonMapper">
+
+<select id="CMBAT001L001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 프로세스 기본정보 리스트 조회 
+ * 매퍼명 : commonMapper.CMBAT001L001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectBatchInfo
+ * 최종변경일 : 2019.09.02
+ * */
+SELECT  *
+FROM    (
+				SELECT  A.LAOT_STDD_DATE    /* 배치기준일자    */
+				        , A.BTCH_JOB_ID     /* 배치JOBID       */
+				        , A.BTCH_WORK_SQNO  /* 배치작업일련번호*/
+				        , A.LAST_CHMN_MPNO  /* 최종변경자사번  */
+				        , A.LAST_CHNG_DTTM  /* 최종변경일시    */
+				        , A.PGM_ID          /* 프로그램ID      */
+				        , A.FRST_RGTR_MPNO  /* 최초등록자사번  */
+				        , A.FRST_RGST_DTTM  /* 최초등록일시    */
+				        , A.BTCH_PGM_ID     /* 배치프로그램ID  */
+				        , A.DLNG_STRT_TIME  /* 처리시작시간    */
+				        , A.DLNG_END_TIME   /* 처리종료시간    */
+				        , A.ARGU_1          /* 인자1           */
+				        , A.ARGU_2          /* 인자2           */
+				        , A.ARGU_3          /* 인자3           */
+				        , A.ARGU_4          /* 인자4           */
+				        , A.ARGU_5          /* 인자5           */
+				        , A.BTCH_DVSN       /* 배치구분        */
+				        , A.BTCH_STAT       /* 배치상태        */
+				        , A.DLNG_DURA       /* 처리내용        */
+				        , A.DLNG_CNT        /* 처리건수        */
+				        , A.DLNG_EMPL_NO    /* 처리사원번호    */
+				        , A.SHLL_NAME       /* 쉘명    */
+				FROM    NBMADMIN.TB_CMBAT001 A
+				WHERE   1=1
+				AND     A.LAOT_STDD_DATE BETWEEN #{STA_DT} AND #{END_DT}
+				AND     (#{BTCH_JOB_ID} IS NULL OR ( #{BTCH_JOB_ID} IS NOT NULL AND A.BTCH_JOB_ID LIKE '%'||#{BTCH_JOB_ID}||'%'))
+				AND     (#{BTCH_STAT} IS NULL OR ( #{BTCH_STAT} IS NOT NULL AND A.BTCH_STAT  = #{BTCH_STAT}))
+				ORDER BY A.LAOT_STDD_DATE, A.DLNG_STRT_TIME
+				)
+WHERE   1=1
+<![CDATA[
+/* CTS처리 */
+AND NOT (LAOT_STDD_DATE < #{CTS_LAOT_STDD_DATE})
+AND NOT (LAOT_STDD_DATE = #{CTS_LAOT_STDD_DATE} AND DLNG_STRT_TIME <= #{CTS_DLNG_STRT_TIME})
+AND     ROWNUM <= #{ROW_NUM}
+/* CTS처리 */
+]]>
+
+</select>
+<select id="CMBAT001S001" parameterType="paramMap" resultType="int">
+/* 내용 : 프로세스 기본정보 리스트 건수 조회 
+ * 매퍼명 : commonMapper.CMBAT001S001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectBatchInfo
+ * 최종변경일 : 2019.09.02
+ * */
+SELECT  COUNT(A.BTCH_JOB_ID) CNT
+FROM    NBMADMIN.TB_CMBAT001 A
+WHERE   1=1
+AND     A.LAOT_STDD_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     (#{BTCH_JOB_ID} IS NULL OR ( #{BTCH_JOB_ID} IS NOT NULL AND A.BTCH_JOB_ID LIKE '%'||#{BTCH_JOB_ID}||'%'))
+AND     (#{BTCH_STAT} IS NULL OR ( #{BTCH_STAT} IS NOT NULL AND A.BTCH_STAT  = #{BTCH_STAT}))
+</select>
+<delete id="CMCOD001D001" parameterType="paramMap">
+DELETE FROM NBMADMIN.TB_CMCOD001
+WHERE CODE_GRP = #{CODE_GRP}
+</delete>
+<insert id="CMCOD001I001" parameterType="paramMap">
+INSERT INTO NBMADMIN.TB_CMCOD001
+(
+    CODE_GRP,
+    FRST_RGTR_MPNO,
+    PGM_ID,
+    LAST_CHMN_MPNO,
+    CODE_GPNM
+)
+VALUES 
+(
+    UPPER(#{CODE_GRP})
+	, #{MPNO}
+	, #{PGM_ID}
+	, #{MPNO}
+	, #{CODE_GPNM}
+)
+</insert>
+<select id="CMCOD001L001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 코드그룹리스트 조회 
+ * 매퍼명 : commonMapper.CMCOD001L001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectCommonGroup
+ * 최종변경일 : 2019.06.18
+ * */
+SELECT 
+    CODE_GRP,   /* 코드그룹 */
+    CODE_GPNM,  /* 코드그룹명 */
+    LAST_CHMN_MPNO, /* 최종변경사원번호 */
+    LAST_CHNG_DTTM, /* 최종변경일시 */
+    PGM_ID, /* 프로그램ID */
+    FRST_RGTR_MPNO, /* 최초등록사원번호 */
+    FRST_RGST_DTTM  /* 최초등록일시 */
+FROM NBMADMIN.TB_CMCOD001
+WHERE 1=1
+AND (#{CODE_GRP} IS NULL OR ( #{CODE_GRP} IS NOT NULL AND CODE_GRP LIKE '%'|| UPPER(#{CODE_GRP})||'%'))
+AND (#{CODE_GPNM} IS NULL OR ( #{CODE_GPNM} IS NOT NULL AND CODE_GPNM LIKE '%'||UPPER(#{CODE_GPNM})||'%'))
+<![CDATA[
+/* CTS처리 */
+AND NOT (#{CTS_CODE_GRP} >= CODE_GRP )
+AND ('A' = #{SEARCH_TP} OR ROWNUM <= #{ROW_NUM})
+/* CTS처리 */
+]]>
+ORDER BY CODE_GRP
+</select>
+<select id="CMCOD001S001" parameterType="paramMap" resultType="int">
+/* 내용 : 코드그룹리스트 건수 조회 
+ * 매퍼명 : commonMapper.CMCOD001S001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectCommonGroup
+ * 최종변경일 : 2019.07.01
+ * */
+SELECT 
+    COUNT(CODE_GRP) CNT
+FROM NBMADMIN.TB_CMCOD001
+WHERE 1=1
+AND (#{CODE_GRP} IS NULL OR ( #{CODE_GRP} IS NOT NULL AND CODE_GRP LIKE '%'|| UPPER(#{CODE_GRP})||'%'))
+AND (#{CODE_GPNM} IS NULL OR ( #{CODE_GPNM} IS NOT NULL AND CODE_GPNM LIKE '%'||UPPER(#{CODE_GPNM})||'%'))
+</select>
+<update id="CMCOD001U001" parameterType="paramMap">
+UPDATE NBMADMIN.TB_CMCOD001
+SET LAST_CHMN_MPNO = #{MPNO},
+    LAST_CHNG_DTTM = SYSDATE,
+    CODE_GPNM = #{CODE_GPNM}
+WHERE CODE_GRP = #{CODE_GRP}
+</update>
+<delete id="CMCOD002D001" parameterType="paramMap">
+DELETE FROM NBMADMIN.TB_CMCOD002
+WHERE   CODE_GRP = #{CODE_GRP}
+AND     CODE_VAL  = #{CODE_VAL}
+</delete>
+<select id="CMCOD002L001" parameterType="paramMap" resultType="paramMap">
+SELECT 
+    CODE_GRP,
+    CODE_VAL,
+    LAST_CHMN_MPNO,
+    LAST_CHNG_DTTM,
+    PGM_ID,
+    FRST_RGTR_MPNO,
+    FRST_RGST_DTTM,
+    CODE_NAME,
+    CODE_ENGL_NAME,
+    OUTP_ORD1,
+    OUTP_ORD2,
+    OUTP_ORD3
+FROM NBMADMIN.TB_CMCOD002
+WHERE 1=1
+AND  CODE_GRP = #{CODE_GRP}
+ORDER BY CODE_VAL
+</select>
+<select id="CMCOD002L002" parameterType="paramMap" resultType="paramMap">
+/*
+ * 내용 : 공통모듈 - 공통코드리스트를 조회 
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService
+ * 최종변경일 : 2019.06.18
+ * */
+SELECT 
+    CODE_GRP,   /* 코드그룹 */
+    CODE_VAL,   /* 코드값 */
+    CODE_NAME,  
+    CODE_ENGL_NAME
+FROM NBMADMIN.TB_CMCOD002
+WHERE 1=1
+AND  CODE_GRP = #{CODE_GRP}
+AND  ${OUTP_ORD} > 0
+ORDER BY ${OUTP_ORD}
+</select>
+<insert id="CMCOD002I001" parameterType="paramMap">
+INSERT INTO NBMADMIN.TB_CMCOD002
+(
+    CODE_GRP,
+    CODE_VAL,
+    LAST_CHMN_MPNO,
+    PGM_ID,
+    FRST_RGTR_MPNO,
+    CODE_NAME,
+    CODE_ENGL_NAME,
+    OUTP_ORD1,
+    OUTP_ORD2,
+    OUTP_ORD3
+)
+VALUES 
+(
+    #{CODE_GRP}
+    , UPPER(#{CODE_VAL})
+    , #{MPNO}
+    , #{PGM_ID}
+    , #{MPNO}
+    ,#{CODE_NAME}
+    ,#{CODE_ENGL_NAME}
+    ,#{OUTP_ORD1}
+    ,NVL(#{OUTP_ORD2},0)
+    ,NVL(#{OUTP_ORD3},0)
+)
+</insert>
+<update id="CMCOD002U001" parameterType="paramMap">
+UPDATE NBMADMIN.TB_CMCOD002
+SET 	CODE_VAL  = #{CODE_VAL},
+    	LAST_CHMN_MPNO  = #{MPNO},
+    	LAST_CHNG_DTTM  = SYSDATE,
+    	CODE_NAME = #{CODE_NAME},
+    	CODE_ENGL_NAME  = #{CODE_ENGL_NAME},
+    	OUTP_ORD1  = #{OUTP_ORD1},
+    	OUTP_ORD2  = #{OUTP_ORD2},
+    	OUTP_ORD3  = #{OUTP_ORD3}
+WHERE CODE_GRP = #{CODE_GRP}
+AND    CODE_VAL  = #{CODE_VAL}
+</update>
+<insert id="CMIMG001I001" parameterType="paramMap">
+/* 내용 : 이미지업로드관리 등록 
+ * 매퍼명 : commonMapper.CMIMG001I001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonComponent.imgUpload
+ * 최종변경일 : 2019.08.09
+ * */
+<selectKey keyProperty="retVal" resultType="int" order="BEFORE">
+SELECT NVL(MAX(RGST_SQNO),0) + 1
+FROM NBMADMIN.TB_CMIMG001
+WHERE 1=1
+AND BOND_ADMN_NO = #{BOND_ADMN_NO}
+</selectKey>
+INSERT INTO NBMADMIN.TB_CMIMG001
+(
+    BOND_ADMN_NO    /* 채권관리번호   */
+    , RGST_SQNO       /* 등록일련번호 */
+    , LAST_CHMN_MPNO  /* 최종변경자사번 */
+    , FRST_RGTR_MPNO  /* 최초등록자사번 */
+    , PGM_ID          /* 프로그램ID     */
+    , RGST_MAN_MPNO   /* 등록자사번     */
+    , DOCU_TYPE_CODE  /* 문서타입코드   */
+    , IMAG_FILE_NAME  /* 이미지파일명   */
+    , SUB_SYS_CODE    /* 서브시스템코드 */
+)
+VALUES 
+(
+    #{BOND_ADMN_NO  }
+    , #{retVal}
+    , #{MPNO}
+    , #{MPNO}
+    , #{PGM_ID        }
+    , #{MPNO }
+    , #{DOCU_TYPE_CODE}
+    , #{IMAG_FILE_NAME}
+    , #{SUB_SYS_CODE  }
+)
+</insert>
+<select id="CMIMG001L001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 이미지업로드관리 리스트 조회 
+ * 매퍼명 : commonMapper.CMIMG001L001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectImgFileUpload
+ * 최종변경일 : 2019.08.12
+ * */
+SELECT *
+FROM (
+SELECT  A.BOND_ADMN_NO        /* 채권관리번호   */
+				, A.RGST_SQNO         /* 등록일련번호   */
+				, A.RGST_DATE         /* 등록일자       */
+				, A.RGST_MAN_MPNO     /* 등록자사번     */
+				, B.EMPL_NAME         /* 등록자사원명   */
+				, A.SUB_SYS_CODE      /* 서브시스템코드 */
+				, A.DOCU_TYPE_CODE    /* 문서타입코드   */
+				, A.IMAG_FILE_NAME    /* 이미지파일명   */
+				, A.IMAG_KIND_CODE    /* 이미지종류코드 */
+				, A.LAST_CHMN_MPNO    /* 최종변경자사번 */
+				, A.LAST_CHNG_DTTM    /* 최종변경일시   */
+				, A.FRST_RGTR_MPNO    /* 최초등록자사번 */
+				, A.FRST_RGST_DTTM    /* 최초등록일시   */
+				, A.PGM_ID            /* 프로그램ID     */
+				, C.CODE_NAME AS DOCU_TYPE_CDNM /* 문서타입코드명   */
+FROM    NBMADMIN.TB_CMIMG001 A
+        , NBMADMIN.TB_CMORG002 B
+        , NBMADMIN.TB_CMCOD002 C
+WHERE   1=1
+AND     A.RGST_MAN_MPNO = B.EMPL_NO
+AND     A.DOCU_TYPE_CODE = C.CODE_VAL(+)
+AND     C.CODE_GRP(+) = 'DOCU_TYPE_CODE'
+AND     A.RGST_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     (#{BOND_ADMN_NO} IS NULL OR ( #{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO  = #{BOND_ADMN_NO}))
+AND     (#{DOCU_TYPE_CODE} IS NULL OR ( #{DOCU_TYPE_CODE} IS NOT NULL AND A.DOCU_TYPE_CODE = #{DOCU_TYPE_CODE}))
+AND     (#{IMAG_FILE_NAME} IS NULL OR ( #{IMAG_FILE_NAME} IS NOT NULL AND A.IMAG_FILE_NAME LIKE '%'||#{IMAG_FILE_NAME}||'%'))
+<![CDATA[
+/* CTS처리 */
+AND NOT (A.RGST_DATE < #{CTS_RGST_DATE})
+AND NOT (A.RGST_DATE = #{CTS_RGST_DATE} AND A.BOND_ADMN_NO < #{CTS_BOND_ADMN_NO})
+AND NOT (A.RGST_DATE = #{CTS_RGST_DATE} AND A.BOND_ADMN_NO = #{CTS_BOND_ADMN_NO} AND A.RGST_SQNO <= #{CTS_RGST_SQNO})
+/* CTS처리 */
+]]>
+ORDER BY A.RGST_DATE, A.BOND_ADMN_NO, A.RGST_SQNO
+)
+<![CDATA[
+WHERE ROWNUM <= #{ROW_NUM}
+]]>
+</select>
+<select id="CMIMG001S001" parameterType="paramMap" resultType="int">
+/* 내용 : 이미지업로드관리 리스트 건수 조회 
+ * 매퍼명 : commonMapper.CMIMG001S001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectImgFileUpload
+ * 최종변경일 : 2019.08.12
+ * */
+SELECT  COUNT(A.BOND_ADMN_NO) CNT
+FROM    NBMADMIN.TB_CMIMG001 A
+        , NBMADMIN.TB_CMORG002 B
+        , NBMADMIN.TB_CMCOD002 C
+WHERE   1=1
+AND     A.RGST_MAN_MPNO = B.EMPL_NO
+AND     A.DOCU_TYPE_CODE = C.CODE_VAL(+)
+AND     C.CODE_GRP(+) = 'DOCU_TYPE_CODE'
+AND     A.RGST_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     (#{BOND_ADMN_NO} IS NULL OR ( #{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO  = #{BOND_ADMN_NO}))
+AND     (#{DOCU_TYPE_CODE} IS NULL OR ( #{DOCU_TYPE_CODE} IS NOT NULL AND A.DOCU_TYPE_CODE = #{DOCU_TYPE_CODE}))
+AND     (#{IMAG_FILE_NAME} IS NULL OR ( #{IMAG_FILE_NAME} IS NOT NULL AND A.IMAG_FILE_NAME LIKE '%'||#{IMAG_FILE_NAME}||'%'))
+</select>
+
+<delete id="CMMSG001D001" parameterType="paramMap">
+/* 내용 : 사용자메시지 삭제
+ * 매퍼명 : commonMapper.CMMSG001U001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.deleteMsgCode
+ * 최종변경일 : 2019.06.19
+ * */
+DELETE FROM NBMADMIN.TB_CMMSG001
+WHERE   1 = 1
+AND     MESG_ID  = #{MESG_ID}
+</delete>
+<insert id="CMMSG001I001" parameterType="paramMap">
+/* 내용 : 사용자메시지 등록 
+ * 매퍼명 : commonMapper.CMMSG001I001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.insertMsgCode
+ * 최종변경일 : 2019.06.19
+ * */
+<selectKey keyProperty="retVal" resultType="String" order="BEFORE">
+SELECT TRIM(TO_CHAR(NVL(MAX(MESG_NO),0) + 1, '0000'))
+FROM NBMADMIN.TB_CMMSG001
+WHERE 1=1
+AND MESG_TPCD = #{MESG_TPCD}
+</selectKey>
+INSERT INTO NBMADMIN.TB_CMMSG001
+(
+    MESG_ID,
+    LAST_CHMN_MPNO,
+    PGM_ID,
+    FRST_RGTR_MPNO,
+    MESG_TPCD,
+    MESG_NO,
+    POPU_YN,
+    MESG_CTEN,
+    RGST_DATE,
+    RGST_MAN_MPNO
+)
+VALUES 
+(
+     #{MESG_TPCD}||#{retVal} 
+   	, #{MPNO}
+	, #{PGM_ID}
+   	, #{MPNO}
+	, #{MESG_TPCD}
+	, #{retVal}
+	, #{POPU_YN}
+	, #{MESG_CTEN}
+	, TO_CHAR(SYSDATE, 'YYYYMMDD')
+	, #{MPNO}
+)
+</insert>
+<select id="CMMSG001L001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 사용자메시지 리스트 조회 
+ * 매퍼명 : commonMapper.CMMSG001L001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectMessageCode
+ * 최종변경일 : 2019.06.19
+ * */
+SELECT  MESG_ID,
+        LAST_CHMN_MPNO,
+        TO_CHAR(LAST_CHNG_DTTM, 'YYYYMMDD') LAST_CHNG_DTTM,
+        PGM_ID,
+        FRST_RGTR_MPNO,
+        TO_CHAR(FRST_RGST_DTTM, 'YYYYMMDD') FRST_RGST_DTTM,
+        MESG_TPCD,
+        MESG_NO,
+        POPU_YN,
+        MESG_CTEN,
+        RGST_DATE,
+        RGST_MAN_MPNO
+FROM    NBMADMIN.TB_CMMSG001
+WHERE   1=1
+AND     (#{MESG_ID} IS NULL OR ( #{MESG_ID} IS NOT NULL AND MESG_ID  = UPPER(#{MESG_ID})))
+AND     (#{MESG_CTEN} IS NULL OR ( #{MESG_CTEN} IS NOT NULL AND MESG_CTEN LIKE '%'||#{MESG_CTEN}||'%'))
+AND     (#{MESG_TPCD} IS NULL OR ( #{MESG_TPCD} IS NOT NULL AND MESG_TPCD = #{MESG_TPCD}))
+<![CDATA[
+/* CTS처리 */
+AND NOT MESG_ID <= #{CTS_MESG_ID}
+AND ('A' = #{SEARCH_TP} OR ROWNUM <= #{ROW_NUM})
+/* CTS처리 */
+]]>
+ORDER BY MESG_ID
+</select>
+<select id="CMMSG001S001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 공통모듈 - 사용자메시지 조회 
+ * 매퍼명 : commonMapper.CMMSG001S001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectCommonGroup
+ * 최종변경일 : 2019.06.19
+ * */
+SELECT 
+    MESG_ID,
+    LAST_CHMN_MPNO,
+    LAST_CHNG_DTTM,
+    PGM_ID,
+    FRST_RGTR_MPNO,
+    FRST_RGST_DTTM,
+    MESG_TPCD,
+    MESG_NO,
+    POPU_YN,
+    MESG_CTEN,
+    RGST_DATE,
+    RGST_MAN_MPNO
+FROM NBMADMIN.TB_CMMSG001
+WHERE MESG_ID = #{MESG_ID}
+</select>
+<select id="CMMSG001S002" parameterType="paramMap" resultType="int">
+/* 내용 : 사용자메시지 리스트 건수 조회 
+ * 매퍼명 : commonMapper.CMMSG001L002
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectMessageCode
+ * 최종변경일 : 2019.06.19
+ * */
+SELECT  COUNT(MESG_ID) CNT
+FROM    NBMADMIN.TB_CMMSG001
+WHERE   1=1
+AND     (#{MESG_ID} IS NULL OR ( #{MESG_ID} IS NOT NULL AND MESG_ID  = UPPER(#{MESG_ID})))
+AND     (#{MESG_CTEN} IS NULL OR ( #{MESG_CTEN} IS NOT NULL AND MESG_CTEN LIKE '%'||#{MESG_CTEN}||'%'))
+AND     (#{MESG_TPCD} IS NULL OR ( #{MESG_TPCD} IS NOT NULL AND MESG_TPCD = #{MESG_TPCD}))
+</select>
+<update id="CMMSG001U001" parameterType="paramMap">
+/* 내용 : 사용자메시지 수정 
+ * 매퍼명 : commonMapper.CMMSG001U001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.insertMsgCode
+ * 최종변경일 : 2019.06.19
+ * */
+UPDATE NBMADMIN.TB_CMMSG001
+SET 	LAST_CHMN_MPNO  = #{MPNO},
+    	LAST_CHNG_DTTM  = SYSDATE,
+    	MESG_TPCD = #{MESG_TPCD},
+    	POPU_YN  = #{POPU_YN},
+    	MESG_CTEN  = #{MESG_CTEN}
+WHERE 1=1
+AND    MESG_ID  = #{MESG_ID}
+</update>
+
+<insert id="CMMNA004I001" parameterType="paramMap">
+/* 내용 : 거래로그 등록 
+ * 매퍼명 : commonMapper.CMMNA004I001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonUtil.insertTxLog
+ * 최종변경일 : 2019.06.28
+ * */
+INSERT INTO NBMADMIN.TB_CMMNA004
+(
+    DLNO,
+    LAST_CHMN_MPNO,
+    PGM_ID,
+    FRST_RGTR_MPNO,
+    SCRN_ID,
+    ACES_ROUT,
+    DLGS_DATE,
+    DLGS_TIME,
+    DLNG_MAN_MPNO,
+    DLNG_RESL,
+    DLNG_RTMS_CTEN
+)
+VALUES
+(
+    SQ_DLNO.nextval,
+    #{MPNO},
+    #{PGM_ID},
+    #{MPNO},
+    #{SCRN_ID},
+    #{ACES_ROUT},
+    TO_CHAR(SYSDATE,'YYYYMMDD'),
+    TO_CHAR(SYSDATE,'HH24MISS'),
+    #{MPNO},
+    #{DLNG_RESL},
+    #{DLNG_RTMS_CTEN}
+)
+</insert>
+<select id="CMMNA004L001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 거래로그 리스트조회 
+ * 매퍼명 : commonMapper.CMMNA004L001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonUtil.selectTxLog
+ * 최종변경일 : 2019.07.03
+ * */
+SELECT  A.DLNO,
+        A.LAST_CHMN_MPNO,
+        A.LAST_CHNG_DTTM,
+        A.PGM_ID,
+        A.FRST_RGTR_MPNO,
+        A.FRST_RGST_DTTM,
+        A.SCRN_ID,
+        A.ACES_ROUT,
+        B.SCRN_NAME,
+        A.DLGS_DATE,
+        A.DLGS_TIME,
+        A.DLNG_MAN_MPNO,
+        C.EMPL_NAME,
+        A.DLNG_RESL,
+        A.DLNG_RTMS_CTEN
+FROM    NBMADMIN.TB_CMMNA004 A
+        , NBMADMIN.TB_CMSCR001 B
+        , NBMADMIN.TB_CMORG002 C
+WHERE   1=1
+AND     A.SCRN_ID = B.SCRN_ID
+AND     A.DLNG_MAN_MPNO = C.EMPL_NO
+AND     A.DLGS_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     A.DLGS_TIME BETWEEN #{STA_TIME} AND #{END_TIME}
+AND     (#{SCRN_NAME} IS NULL OR ( #{SCRN_NAME} IS NOT NULL AND B.SCRN_NAME LIKE '%'||#{SCRN_NAME}||'%'))
+AND     (#{EMPL_NAME} IS NULL OR ( #{EMPL_NAME} IS NOT NULL AND C.EMPL_NAME LIKE '%'||#{EMPL_NAME}||'%'))
+<![CDATA[
+/* CTS처리 */
+AND NOT A.DLNO <= #{CTS_DLNO}
+AND ROWNUM <= #{ROW_NUM}
+/* CTS처리 */
+]]>
+ORDER BY DLNO
+</select>
+<select id="CMMNA004S001" parameterType="paramMap" resultType="int">
+/* 내용 : 거래로그 리스트 건수 조회
+ * 매퍼명 : commonMapper.CMMNA004S001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonUtil.selectTxLog
+ * 최종변경일 : 2019.07.03
+ * */
+SELECT  COUNT(A.DLNO) CNT
+FROM    NBMADMIN.TB_CMMNA004 A
+        , NBMADMIN.TB_CMSCR001 B
+        , NBMADMIN.TB_CMORG002 C
+WHERE   1=1
+AND     A.SCRN_ID = B.SCRN_ID
+AND     A.DLNG_MAN_MPNO = C.EMPL_NO
+AND     A.DLGS_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     A.DLGS_TIME BETWEEN #{STA_TIME} AND #{END_TIME}
+AND     (#{SCRN_NAME} IS NULL OR ( #{SCRN_NAME} IS NOT NULL AND B.SCRN_NAME LIKE '%'||#{SCRN_NAME}||'%'))
+AND     (#{EMPL_NAME} IS NULL OR ( #{EMPL_NAME} IS NOT NULL AND C.EMPL_NAME LIKE '%'||#{EMPL_NAME}||'%'))
+</select>
+
+<select id="CMMNA007S001" parameterType="paramMap" resultType="java.lang.String">
+/* 내용 : D+ 영업일 조회
+ * 매퍼명 : commonMapper.CMMNA007S001
+ * 작성자 : 1073302
+ * 호출서비스 : 
+ * 최종변경일 : 2019.08.08
+ * */
+SELECT YMD
+FROM   (SELECT /*+ INDEX_ACS(PK_CMMNA007) */
+               YMD
+             , ROWNUM   AS RM
+FROM   TB_CMMNA007
+        WHERE  1=1
+        <![CDATA[
+        AND    YMD >= #{YMD}
+        AND    (ACIR_HLDY_YN = 'N' OR ACIR_HLDY_YN = #{HLDY_YN})
+        /* AND    BIWK_OFDY_YN     = 'N' */
+        AND    ROWNUM <= #{OFFSET} + 1
+        ]]>
+       )
+WHERE  1=1
+AND    RM = #{OFFSET} + 1
+UNION ALL
+SELECT YMD
+FROM   (SELECT /*+ INDEX_DESC(PK_CMMNA007) */
+               YMD
+             , ROWNUM   AS RM
+        FROM   TB_CMMNA007
+        WHERE  1=1
+        <![CDATA[
+        AND    YMD < #{YMD}
+        AND    (ACIR_HLDY_YN = 'N' OR ACIR_HLDY_YN = #{HLDY_YN})
+        /* AND    BIWK_OFDY_YN     = 'N' */
+        AND    ROWNUM <= #{OFFSET} *  -1
+        ]]>
+        ORDER BY YMD desc
+       )
+WHERE  1=1
+AND    RM = #{OFFSET} * -1
+</select>
+
+<insert id="CMRPT001I001" parameterType="paramMap">
+/* 내용 : 출력물관리 등록 
+ * 매퍼명 : commonMapper.CMRPT001I001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.insertMsgCode
+ * 최종변경일 : 2019.08.28
+ * */
+<selectKey keyProperty="retVal" resultType="String" order="BEFORE">
+SELECT NVL(MAX(PUBL_NO),0) + 1
+FROM NBMADMIN.TB_CMRPT001
+WHERE 1=1
+AND OZ_FILE_NAME = #{OZ_FILE_NAME}
+</selectKey>
+INSERT INTO NBMADMIN.TB_CMRPT001
+(
+    OZ_FILE_NAME        /* 오즈파일명       */
+    , PUBL_NO           /* 발행번호         */
+    , LAST_CHMN_MPNO    /* 최종변경자사번   */
+    , PGM_ID            /* 프로그램ID       */
+    , FRST_RGTR_MPNO    /* 최초등록자사번   */
+    , CRTF_CLSF_CODE    /* 증명서분류코드   */
+    , BOND_ADMN_NO      /* 채권관리번호     */
+    , CUST_ID           /* 고객ID           */
+    , CALL_SRVC_NAME    /* 호출서비스명     */
+    , RQST_OZ_PARM      /* 요청OZ파라미터   */
+    , DLNG_MAN_MPNO     /* 처리자사번       */
+    , OFSE_DVSN         /* 직인구분         */
+    , CADC_ISNO         /* 민원서류발급번호 */
+    , CRTF_ISSU_USE     /* 증명서발급용도 */
+    , REVR_NAME         /* 수령자명 */
+    , RECV_PLAC         /* 수신처 */
+    , REM               /* 비고 */
+)
+VALUES 
+(
+    #{OZ_FILE_NAME}
+    , #{retVal} 
+    , #{MPNO}
+    , #{PGM_ID}
+    , #{MPNO}
+    , #{CRTF_CLSF_CODE}
+    , #{BOND_ADMN_NO}
+    , #{CUST_ID}
+    , #{CALL_SRVC_NAME}
+    , #{RQST_OZ_PARM}
+    , #{MPNO}
+    , NVL(#{OFSE_DVSN},'N')
+    , #{CADC_ISNO}
+    , #{CRTF_ISSU_USE}
+    , #{REVR_NAME}
+    , #{RECV_PLAC}
+    , #{REM}
+)
+</insert>
+
+<select id="CMRPT001L001" parameterType="paramMap" resultType="paramMap">
+/* 내용 : 출력물관리 리스트 조회 
+ * 매퍼명 : commonMapper.CMRPT001L001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectMessageCode
+ * 최종변경일 : 2019.08.28
+ * */
+SELECT *
+FROM
+(
+SELECT  A.OZ_FILE_NAME        /* 오즈파일명       */
+        , C.SCRN_NAME         /* 화면명           */
+        , A.PUBL_NO           /* 발행번호         */
+        , A.LAST_CHMN_MPNO    /* 최종변경자사번   */
+        , A.LAST_CHNG_DTTM    /* 최종변경일시     */
+        , A.PGM_ID            /* 프로그램ID       */
+        , A.FRST_RGTR_MPNO    /* 최초등록자사번   */
+        , A.FRST_RGST_DTTM    /* 최초등록일시     */
+        , A.CRTF_CLSF_CODE    /* 증명서분류코드   */
+        , A.BOND_ADMN_NO      /* 채권관리번호     */
+        , A.CUST_ID           /* 고객ID           */
+        , A.CALL_SRVC_NAME    /* 호출서비스명     */
+        , A.RQST_OZ_PARM      /* 요청OZ파라미터   */
+        , A.OUTP_DATE         /* 출력일자         */
+        , A.DLNG_MAN_MPNO     /* 처리자사번       */
+        , B.EMPL_NAME         /* 처리자명         */
+        , A.OFSE_DVSN         /* 직인구분         */
+        , A.CADC_ISNO         /* 민원서류발급번호 */
+        , A.CRTF_ISSU_USE     /* 증명서발급용도 */
+		    , A.REVR_NAME         /* 수령자명 */
+		    , A.RECV_PLAC         /* 수신처 */
+		    , A.REM               /* 비고 */
+FROM    NBMADMIN.TB_CMRPT001 A    /* 출력물관리 */
+        , NBMADMIN.TB_CMORG002 B  /* 내근사원 */
+        , NBMADMIN.TB_CMSCR001 C  /* 화면정보 */
+WHERE   1=1
+AND     A.DLNG_MAN_MPNO = B.EMPL_NO
+AND     A.OZ_FILE_NAME = C.SCRN_ID
+AND     A.OUTP_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     (#{SCRN_NAME} IS NULL OR ( #{SCRN_NAME} IS NOT NULL AND C.SCRN_NAME LIKE '%'||#{SCRN_NAME}||'%'))
+AND     (#{EMPL_NAME} IS NULL OR ( #{EMPL_NAME} IS NOT NULL AND B.EMPL_NAME LIKE '%'||#{EMPL_NAME}||'%'))
+<![CDATA[
+/* CTS처리 */
+AND NOT (A.OUTP_DATE < #{CTS_OUTP_DATE})
+AND NOT (A.OUTP_DATE = #{CTS_OUTP_DATE} AND C.SCRN_NAME < #{CTS_SCRN_NAME})
+AND NOT (A.OUTP_DATE = #{CTS_OUTP_DATE} AND C.SCRN_NAME = #{CTS_SCRN_NAME} AND A.PUBL_NO <= #{CTS_PUBL_NO})
+/* CTS처리 */
+]]>
+ORDER BY A.OUTP_DATE, C.SCRN_NAME, A.PUBL_NO
+)
+<![CDATA[
+WHERE ROWNUM <= #{ROW_NUM}
+]]>
+</select>
+
+<select id="CMRPT001S001" parameterType="paramMap" resultType="int">
+/* 내용 : 출력물관리 리스트 건수 조회 
+ * 매퍼명 : commonMapper.CMRPT001S001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectReportInfo
+ * 최종변경일 : 2019.08.28
+ * */
+SELECT  COUNT(A.OZ_FILE_NAME) AS CNT
+FROM    NBMADMIN.TB_CMRPT001 A    /* 출력물관리 */
+        , NBMADMIN.TB_CMORG002 B  /* 내근사원 */
+        , NBMADMIN.TB_CMSCR001 C  /* 화면정보 */
+WHERE   1=1
+AND     A.DLNG_MAN_MPNO = B.EMPL_NO
+AND     A.OZ_FILE_NAME = C.SCRN_ID
+AND     A.OUTP_DATE BETWEEN #{STA_DT} AND #{END_DT}
+AND     (#{SCRN_NAME} IS NULL OR ( #{SCRN_NAME} IS NOT NULL AND C.SCRN_NAME LIKE '%'||#{SCRN_NAME}||'%'))
+AND     (#{EMPL_NAME} IS NULL OR ( #{EMPL_NAME} IS NOT NULL AND B.EMPL_NAME LIKE '%'||#{EMPL_NAME}||'%'))
+</select>
+
+<select id="PAGINGTEST">
+<![CDATA[
+/*
+ * 내용 : 페이징 테스트
+ * 정렬순서에 따라 CTS처리
+ * CTS컬럼은 조회 DataCollection에 CTS_컬럼명으로 정의 함(여러건 존재 가능)
+ * ROW_NUM은 조회 DataCollection에  ROW_NUM으로 정의 함(한번에 조회되는 건수)
+ * SEARCH_TP는 조회 DataCollection에  SEARCH_TP으로 정의 함(S: 검색, N : 다음검색, A:전체검색)
+ * ASC은 '<(작은값 제외)' DESC는 '>(큰값 제외)'로 부등호 방향을 결정.
+ * CTS초기값 설정은 ASC일 때 문자는 공백(‘ ‘), 숫자는 0으로 세팅. DESC일 때는 날짜형식의 문자일 때 ‘99991231’ 숫자일 때는 자리수만큼 9(예를들어 number(4)면 9999)로 채워줍니다.
+ * 먼저 정렬되는 컬럼이 있으면 '=' 로 처리. 
+ * 마지막 CTS컬럼은 '>=' 나 '<='를 포함.(CTS값으로 세팅된 ROW도 제외시키기 위함)
+ * 예) 
+ * SELECT COL1, COL2, COL3, COL4
+ * FROM TB_TEST
+ * WHERE COL1 = :COL1
+ * -- CTS처리
+ * AND NOT (COL1 < :CTS_COL1) <- CTS_컬럼명으로 정의
+ * AND NOT (COL1 = :CTS_COL1 AND COL2 > :CTS_COL2) <- 먼저 정렬되는 컬럼은 '='처리
+ * AND NOT (COL1 = :CTS_COL1 AND COL2 = :CTS_COL2 AND COL3 =< :CTS_COL3 ) <- 마지막 CTS컬럼은 자신을 포함하여 제외
+ * AND ('A' = :SEARCH_TP OR ROWNUM <= :ROW_NUM) 
+ * ORDER BY COL1 ASC, COL2 DESC, COL3 ASC
+ */
+]]>
+SELECT 
+        ROWNUM,
+        A.CODE_GRP,   
+        B.CODE_VAL,   
+        B.CODE_NAME,  
+        B.CODE_ENGL_NAME
+FROM    NBMADMIN.TB_CMCOD001 A,
+        NBMADMIN.TB_CMCOD002 B
+WHERE   1=1
+AND     A.CODE_GRP = B.CODE_GRP
+<![CDATA[
+/* CTS처리 */
+AND NOT (A.CODE_GRP < #{CTS_CODE_GRP})
+AND NOT (A.CODE_GRP = #{CTS_CODE_GRP} AND B.CODE_VAL <= #{CTS_CODE_VAL})
+AND ROWNUM <= #{ROW_NUM}
+/* CTS처리 */
+]]>
+ORDER BY A.CODE_GRP, B.CODE_VAL
+</select>
+
+
+
+
+<select id="CMIMG001L002" resultType="paramMap" parameterType="paramMap">
+/* 내용 : 이미지업로드관리 리스트 조회 
+ * 매퍼명 : commonMapper.CMIMG001L002
+ * 작성자 : 1073300
+ * 호출서비스 : CommonService.selectImgFileUpload2
+ * 최종변경일 : 2019.12.02
+ * */
+SELECT *
+FROM (
+SELECT  A.BOND_ADMN_NO        /* 채권관리번호   */
+				, A.RGST_SQNO         /* 등록일련번호   */
+				, A.RGST_DATE         /* 등록일자       */
+				, A.RGST_MAN_MPNO     /* 등록자사번     */
+				, B.EMPL_NAME         /* 등록자사원명   */
+				, A.SUB_SYS_CODE      /* 서브시스템코드 */
+				, A.DOCU_TYPE_CODE    /* 문서타입코드   */
+				, A.IMAG_FILE_NAME    /* 이미지파일명   */
+				, A.IMAG_KIND_CODE    /* 이미지종류코드 */
+				, A.LAST_CHMN_MPNO    /* 최종변경자사번 */
+				, A.LAST_CHNG_DTTM    /* 최종변경일시   */
+				, A.FRST_RGTR_MPNO    /* 최초등록자사번 */
+				, A.FRST_RGST_DTTM    /* 최초등록일시   */
+				, A.PGM_ID            /* 프로그램ID     */
+				, C.CODE_NAME AS DOCU_TYPE_CDNM /* 문서타입코드명   */
+FROM    NBMADMIN.TB_CMIMG001 A
+        , NBMADMIN.TB_CMORG002 B
+        , NBMADMIN.TB_CMCOD002 C
+WHERE   1=1
+AND     A.RGST_MAN_MPNO  = B.EMPL_NO
+AND     A.DOCU_TYPE_CODE = C.CODE_VAL(+)
+AND     C.CODE_GRP(+)    = 'DOCU_TYPE_CODE'
+AND    ((#{BOND_ADMN_NO} IS     NULL ) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO  = #{BOND_ADMN_NO}) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO IN (SELECT CUST_ID FROM NBMADMIN.TB_BMBND006 WHERE BOND_ADMN_NO = #{BOND_ADMN_NO})) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO IN (SELECT BOND_ADMN_NO FROM NBMADMIN.TB_BMBND006 WHERE CUST_ID      = #{BOND_ADMN_NO})) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO IN (SELECT CUST_ID FROM NBMADMIN.TB_BMBND006 WHERE CUST_ID      = #{BOND_ADMN_NO})) )
+AND     (#{DOCU_TYPE_CODE} IS NULL OR ( #{DOCU_TYPE_CODE} IS NOT NULL AND A.DOCU_TYPE_CODE = #{DOCU_TYPE_CODE}))
+AND     (#{IMAG_FILE_NAME} IS NULL OR ( #{IMAG_FILE_NAME} IS NOT NULL AND A.IMAG_FILE_NAME LIKE '%'||#{IMAG_FILE_NAME}||'%'))
+<![CDATA[
+/* CTS처리 */
+AND NOT (A.RGST_DATE < #{CTS_RGST_DATE})
+AND NOT (A.RGST_DATE = #{CTS_RGST_DATE} AND A.BOND_ADMN_NO < #{CTS_BOND_ADMN_NO})
+AND NOT (A.RGST_DATE = #{CTS_RGST_DATE} AND A.BOND_ADMN_NO = #{CTS_BOND_ADMN_NO} AND A.RGST_SQNO <= #{CTS_RGST_SQNO})
+/* CTS처리 */
+]]>
+ORDER BY A.RGST_DATE, A.BOND_ADMN_NO, A.RGST_SQNO
+)
+<![CDATA[
+WHERE ROWNUM <= #{ROW_NUM}
+]]>
+</select>
+<select id="CMIMG001S002" parameterType="paramMap" resultType="int">
+/* 내용 : 이미지업로드관리 리스트 건수 조회 
+ * 매퍼명 : commonMapper.CMIMG001S002
+ * 작성자 : 1073300
+ * 호출서비스 : CommonService.selectImgFileUpload2
+ * 최종변경일 : 2019.12.02
+ * */
+SELECT  COUNT(A.BOND_ADMN_NO) CNT
+FROM    NBMADMIN.TB_CMIMG001 A
+        , NBMADMIN.TB_CMORG002 B
+        , NBMADMIN.TB_CMCOD002 C
+WHERE   1=1
+AND     A.RGST_MAN_MPNO = B.EMPL_NO
+AND     A.DOCU_TYPE_CODE = C.CODE_VAL(+)
+AND     C.CODE_GRP(+) = 'DOCU_TYPE_CODE'
+AND    ((#{BOND_ADMN_NO} IS     NULL ) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO  = #{BOND_ADMN_NO}) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO IN (SELECT CUST_ID FROM NBMADMIN.TB_BMBND006 WHERE BOND_ADMN_NO = #{BOND_ADMN_NO})) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO IN (SELECT BOND_ADMN_NO FROM NBMADMIN.TB_BMBND006 WHERE CUST_ID      = #{BOND_ADMN_NO})) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO IN (SELECT CUST_ID FROM NBMADMIN.TB_BMBND006 WHERE CUST_ID      = #{BOND_ADMN_NO})) )
+AND     (#{DOCU_TYPE_CODE} IS NULL OR ( #{DOCU_TYPE_CODE} IS NOT NULL AND A.DOCU_TYPE_CODE = #{DOCU_TYPE_CODE}))
+AND     (#{IMAG_FILE_NAME} IS NULL OR ( #{IMAG_FILE_NAME} IS NOT NULL AND A.IMAG_FILE_NAME LIKE '%'||#{IMAG_FILE_NAME}||'%'))
+</select>
+
+<select id="CMIMG001S003" parameterType="paramMap" resultType="int">
+/* 내용 : 이미지업로드관리 관리번호 채번
+ * 매퍼명 : commonMapper.CMIMG001S003
+ * 작성자 : 
+ * 호출서비스 : CommonService.imgFileUpload
+ * 최종변경일 : 
+ * */
+SELECT  NVL(MAX(A.RGST_SQNO),0)+1 CNT
+FROM    NBMADMIN.TB_CMIMG001 A       
+WHERE   1=1
+AND    ((#{BOND_ADMN_NO} IS     NULL ) OR 
+        (#{BOND_ADMN_NO} IS NOT NULL AND A.BOND_ADMN_NO  = #{BOND_ADMN_NO})
+        )
+</select>
+
+<select id="CMCOD002S001" parameterType="paramMap" resultType="paramMap">
+/*
+ * 내용 : 공통모듈 - 공통코드값 조회 
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService
+ * 최종변경일 : 2019.06.18
+ * */
+SELECT 
+    CODE_GRP,   /* 코드그룹 */
+    CODE_VAL,   /* 코드값 */
+    CODE_NAME,  
+    CODE_ENGL_NAME
+FROM NBMADMIN.TB_CMCOD002 A
+WHERE 1=1
+AND  A.CODE_GRP = #{CODE_GRP}
+<if test='CODE_VAL != null and !CODE_VAL.equals("")'>
+ AND #{CODE_VAL} = A.CODE_VAL
+</if>
+<if test='CODE_NAME != null and !CODE_NAME.equals("")'>
+AND #{CODE_NAME} = A.CODE_NAME
+</if>
+
+</select>
+</mapper>
