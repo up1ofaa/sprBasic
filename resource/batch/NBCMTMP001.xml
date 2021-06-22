@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch
+	http://www.springframework.org/schema/batch/spring-batch.xsd
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/util
+	http://www.springframework.org/schema/util/spring-util.xsd
+	">
+	<!-- 
+    DB to DB sample
+    1. jobParameters : codeGrp
+    2. reader : batchMapper.CMCOD001L002B 호출
+    3. processor : NBCMTMP001JProcessor 처리
+    4. writer : batchMapper.CMCOD001U001 호출
+    -->
+    <import resource="../abstract/eGovBase.xml" />
+    <import resource="classpath:/batch/context-batch-job-launcher.xml" />
+    
+    <batch:job id="NBCMTMP001J" parent="eGovBaseJob">
+        <batch:step id="NBCMTMP001JStep" parent="eGovBaseStep">
+            <tasklet >
+                <chunk reader="NBCMTMP001JReader" processor="NBCMTMP001JProcessor" writer="NBCMTMP001JWriter" commit-interval="10"/>
+            </tasklet>
+        </batch:step>
+    </batch:job>
+    
+	<!-- 읽기 -->
+	<bean id="NBCMTMP001JReader" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+		<property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+		<property name="queryId" value="batchMapper.CMCOD001L001B" />
+	    <property name="parameterValues">
+        <map>
+	        <entry key="codeGrp" value ="#{jobParameters['arg1']}" />
+        </map>
+       </property>
+	</bean>
+    
+   <!-- 처리 -->
+   <bean id="NBCMTMP001JProcessor" scope="step"
+       class="com.hanwhalife.nbm.batch.processor.NBCMTMP001JProcessor">
+   </bean>
+    
+    <!-- 쓰기-->
+   <bean id="NBCMTMP001JWriter" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+   	<property name="assertUpdates" value="false"></property>
+		<property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+ 		<property name="statementId" value="batchMapper.CMCOD001U001" />
+	</bean>
+	
+    
+</beans>
