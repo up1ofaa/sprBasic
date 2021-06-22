@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:tx="http://www.springframework.org/schema/tx"
+  xmlns:aop="http://www.springframework.org/schema/aop"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+      http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd"
+      default-autowire="byName">
+
+  <!-- 1.(공통)기본 화면에서 호출하는 DB -->
+  <!-- oracle (POM에서 commons-dbcp, ojdbc(라이센스 사항으로 별도로 배포되지 않음) 관련 라이브러리 설정) -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxActive" value="30"/>
+        <property name="maxIdle" value="3"/>
+        <property name="maxWait" value="5000"/>
+        <property name="timeBetweenEvictionRunsMillis" value="2400000"/>
+        <property name="defaultAutoCommit" value="false"/>
+    </bean>
+    
+  <!-- SqlSession setup for MyBatis Database Layer -->
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource"   ref="dataSource" />
+    <property name="configLocation" value="classpath:/mybatis/sql_mapper_config.xml" />
+    <property name="mapperLocations" value="classpath:/mybatis/mappers/*.xml" />
+  </bean>
+  
+  <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+    <constructor-arg index="0" ref="sqlSessionFactory"/>
+  </bean>
+  
+     <!-- 2.(공통)배치에서 호출하는 DB -->  
+  <!-- SqlSession setup for MyBatis Database Layer -->
+    <bean id="sqlSessionFactoryBatch" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource"     ref="dataSource" />
+        <property name="configLocation" value="classpath:/batch/sql_mapper_config.xml" />
+        <property name="mapperLocations" value="classpath:/batch/mappers/*.xml" />
+    </bean>
+  
+
+    <bean id="sqlSessionBatch" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="sqlSessionFactoryBatch"/>
+        <constructor-arg index="1" value="BATCH"/>
+    </bean>
+    
+     <!-- 3.(SMS)기본 화면에서 호출하는 DB -->
+      <!-- oracle 12-->
+        <bean id="smsDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+            <property name="driverClassName" value="${sms.driver}"/>
+            <property name="url" value="${sms.url}" />
+            <property name="username" value="${sms.username}"/>
+            <property name="password" value="${sms.password}"/>
+            <property name="maxActive" value="30"/>
+            <property name="maxIdle" value="3"/>
+            <property name="maxWait" value="5000"/>
+            <property name="timeBetweenEvictionRunsMillis" value="2400000"/>
+            <property name="defaultAutoCommit" value="true"/>
+        </bean>
+        
+      <!-- SqlSession setup for MyBatis Database Layer -->
+      <bean id="smsSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource"   ref="smsDataSource" />
+        <property name="configLocation" value="classpath:/mybatis/sms_mapper_config.xml" />
+        <property name="mapperLocations" value="classpath:/mybatis/smsMappers/*.xml" />
+      </bean>
+      
+      <bean id="smsSqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="smsSqlSessionFactory"/>
+      </bean> 
+  
+  <!-- MapperConfigurer setup for MyBatis Database Layer with @Mapper("deptMapper") in DeptMapper Interface --> 
+  <!-- <bean class="egovframework.rte.psl.dataaccess.mapper.MapperConfigurer">
+    <property name="basePackage" value="com.hanwhalife.nbm.service.mapper" />
+  </bean> -->
+  
+  <!-- 1.(공통)기본 화면에서 호출하는 DB -->
+  <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="nestedTransactionAllowed" value="false"></property>
+  </bean>
+  
+  <!-- 2.(공통)배치에서 호출하는 DB --> 
+  <bean id="transactionManagerBatch" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="nestedTransactionAllowed" value="false"></property>
+  </bean>
+  
+  <!-- 3.(SMS)기본 화면에서 호출하는 DB-->
+  <bean id="transactionManagerSms" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="smsDataSource"/>
+    <property name="nestedTransactionAllowed" value="false"></property>
+  </bean>
+  
+  <tx:advice id="txAdvice" transaction-manager="transactionManager">
+    <tx:attributes>
+      <tx:method name="select*" read-only="true" />
+      <tx:method name="get*" read-only="true" />
+      <tx:method name="*" rollback-for="Exception" />
+    </tx:attributes>
+  </tx:advice>
+
+  <tx:advice id="txAdviceBatch" transaction-manager="transactionManagerBatch">
+        <tx:attributes>
+            <tx:method name="select*" read-only="true" />
+            <tx:method name="get*" read-only="true" />
+            <tx:method name="*" rollback-for="Exception" />
+        </tx:attributes>
+    </tx:advice>
+    
+      <tx:advice id="txAdviceSms" transaction-manager="transactionManagerSms">
+    <tx:attributes>
+      <tx:method name="select*" read-only="true" />
+      <tx:method name="get*" read-only="true" />
+      <tx:method name="*" rollback-for="Exception" />
+    </tx:attributes>
+  </tx:advice>
+
+    <aop:config proxy-target-class="true">
+        <aop:pointcut id="requiredTx" expression="execution(* com.hanwhalife.nbm.service.*.*.*.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="requiredTx" />
+    </aop:config>
+    
+    <aop:config proxy-target-class="true">
+        <!-- <aop:pointcut id="requiredTxBatch" expression="execution(* com.hanwhalife.nbm.batch.service.*.impl.*Impl.*(..))"/> -->
+        <aop:pointcut id="requiredTxBatch" expression="execution(* com.hanwhalife.nbm.batch.service.*.*.*.*(..))"/>
+        <aop:advisor advice-ref="txAdviceBatch" pointcut-ref="requiredTxBatch" />
+    </aop:config>
+    
+     <aop:config proxy-target-class="true">
+        <aop:pointcut id="requiredTxSms" expression="execution(* com.hanwhalife.nbm.service.*.*.*.*(..))"/>
+        <aop:advisor advice-ref="txAdviceSms" pointcut-ref="requiredTxSms" />
+    </aop:config>
+    
+
+</beans>
