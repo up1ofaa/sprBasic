@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+<!-- 값이 null이어도 컬럼명이 반환 -->
+<settings>
+    <setting name="callSettersOnNulls" value="true"/>
+</settings>
+<!-- Map as paramMap -->
+<typeAliases><typeAlias alias="paramMap" type="java.util.Map" /></typeAliases>
+<mappers></mappers>
+</configuration>
