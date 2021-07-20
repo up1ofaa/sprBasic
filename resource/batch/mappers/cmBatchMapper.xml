@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cmBatchMapper">
+
+
+
+<insert id="CMBAT001I001" parameterType="paramMap">
+/* 내용 : 배치관리 등록 
+ * 매퍼명 : cmBatchMapper.CMBAT001I001
+ * 작성자 : 1073302
+ * 호출서비스 : CustomJobListener.insertBatchInfo
+ * 최종변경일 : 2019.08.28
+ * */
+<selectKey keyProperty="retVal" resultType="String" order="BEFORE">
+SELECT NVL(MAX(BTCH_WORK_SQNO),0) + 1
+FROM NBMADMIN.TB_CMBAT001
+WHERE 1=1
+AND LAOT_STDD_DATE = #{LAOT_STDD_DATE}
+AND BTCH_JOB_ID = #{BTCH_JOB_ID}
+</selectKey>
+INSERT INTO NBMADMIN.TB_CMBAT001
+(
+    LAOT_STDD_DATE    /* 배치기준일자     */
+    , BTCH_JOB_ID     /* 배치JOBID        */
+    , BTCH_WORK_SQNO  /* 배치작업일련번호 */
+    , LAST_CHMN_MPNO  /* 최종변경자사번   */
+    , PGM_ID          /* 프로그램ID       */
+    , FRST_RGTR_MPNO  /* 최초등록자사번   */
+    , BTCH_PGM_ID     /* 배치프로그램ID   */
+    , DLNG_STRT_TIME  /* 처리시작시간     */
+    , DLNG_END_TIME   /* 처리종료시간     */
+    , ARGU_1          /* 인자1            */
+    , ARGU_2          /* 인자2            */
+    , ARGU_3          /* 인자3            */
+    , ARGU_4          /* 인자4            */
+    , ARGU_5          /* 인자5            */
+    , BTCH_DVSN       /* 배치구분         */
+    , BTCH_STAT       /* 배치상태         */
+    , DLNG_DURA       /* 처리내용         */
+    , DLNG_CNT        /* 처리건수         */
+    , DLNG_EMPL_NO    /* 처리사원번호     */
+    , BTCH_QUE_ID     /* 배치큐ID     */
+    , SHLL_NAME     /* 쉘명     */
+)
+VALUES 
+(
+    <!-- #{laotStddDate}
+		, #{btchJobId}
+		, #{btchWorkSqno}
+		, #{mpno}
+		, #{pgmId}
+		, #{mpno}
+		, #{btchPgmId}
+		, #{dlngStrtTime}
+		, #{dlngEndTime}
+		, #{argu1}
+		, #{argu2}
+		, #{argu3}
+		, #{argu4}
+		, #{argu5}
+		, #{btchDvsn}
+		, #{btchStat}
+		, #{dlngDura}
+		, #{dlngCnt}
+		, #{mpno} -->
+		#{LAOT_STDD_DATE}
+		, #{BTCH_JOB_ID}
+		, #{retVal}
+		, #{MPNO}
+		, #{PGM_ID}
+		, #{MPNO}
+		, #{BTCH_PGM_ID}
+		, #{DLNG_STRT_TIME}
+		, #{DLNG_END_TIME}
+		, #{ARGU_1}
+		, #{ARGU_2}
+		, #{ARGU_3}
+		, #{ARGU_4}
+		, #{ARGU_5}
+		, #{BTCH_DVSN}
+		, #{BTCH_STAT}
+		, #{DLNG_DURA}
+		, #{DLNG_CNT}
+		, #{MPNO}
+		, #{BTCH_QUE_ID}
+		, #{SHLL_NAME}
+)
+</insert>
+<update id="CMBAT001U001" parameterType="paramMap">
+/* 내용 : 배치이력관리 완료
+ * 매퍼명 : cmBatchMapper.CMBAT001U001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.updateBatchInfo
+ * 최종변경일 : 2019.06.19
+ * */
+UPDATE NBMADMIN.TB_CMBAT001
+SET 	LAST_CHMN_MPNO = #{MPNO} /* 최종변경자사번   */
+      , LAST_CHNG_DTTM = SYSDATE /* 최종변경일시     */
+      , DLNG_END_TIME  = #{DLNG_END_TIME} /* 처리종료시간     */
+      , BTCH_STAT      = #{BTCH_STAT} /* 배치상태         */
+      , DLNG_DURA      = #{DLNG_DURA} /* 처리내용         */
+WHERE 1=1
+AND    LAOT_STDD_DATE  = #{LAOT_STDD_DATE}
+AND    BTCH_JOB_ID  = #{BTCH_JOB_ID}
+AND    BTCH_STAT  = 'EXECUTING'
+</update>
+<update id="CMBAT001U002" parameterType="paramMap">
+/* 내용 : 배치이력관리 처리건수 수정 
+ * 매퍼명 : cmBatchMapper.CMBAT001U002
+ * 작성자 : 1073302
+ * 최종변경일 : 2019.09.16
+ * */
+UPDATE NBMADMIN.TB_CMBAT001
+SET 	LAST_CHMN_MPNO = #{MPNO} /* 최종변경자사번   */
+      , LAST_CHNG_DTTM = SYSDATE /* 최종변경일시     */
+      , DLNG_CNT       = DLNG_CNT + #{DLNG_CNT} /* 처리건수         */
+WHERE 1=1
+AND    LAOT_STDD_DATE  = #{LAOT_STDD_DATE}
+AND    BTCH_JOB_ID  = #{BTCH_JOB_ID}
+AND    BTCH_STAT  = #{BTCH_STAT}
+</update>
+<update id="CMBAT001U999" parameterType="paramMap">
+/* 내용 : 배치이력관리 수정 
+ * 매퍼명 : cmBatchMapper.CMBAT001U001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.updateBatchInfo
+ * 최종변경일 : 2019.06.19
+ * */
+UPDATE NBMADMIN.TB_CMBAT001
+SET 	LAST_CHMN_MPNO = #{MPNO} /* 최종변경자사번   */
+      , LAST_CHNG_DTTM = SYSDATE /* 최종변경일시     */
+      , PGM_ID         = #{PGM_ID} /* 프로그램ID       */
+      , BTCH_PGM_ID    = #{BTCH_PGM_ID} /* 배치프로그램ID   */
+      , DLNG_STRT_TIME = #{DLNG_STRT_TIME} /* 처리시작시간     */
+      , DLNG_END_TIME  = #{DLNG_END_TIME} /* 처리종료시간     */
+      , ARGU_1         = #{ARGU_1} /* 인자1            */
+      , ARGU_2         = #{ARGU_2} /* 인자2            */
+      , ARGU_3         = #{ARGU_3} /* 인자3            */
+      , ARGU_4         = #{ARGU_4} /* 인자4            */
+      , ARGU_5         = #{ARGU_5} /* 인자5            */
+      , BTCH_DVSN      = #{BTCH_DVSN} /* 배치구분         */
+      , BTCH_STAT      = #{BTCH_STAT} /* 배치상태         */
+      , DLNG_DURA      = #{DLNG_DURA} /* 처리내용         */
+      , DLNG_CNT       = #{DLNG_CNT} /* 처리건수         */
+      , DLNG_EMPL_NO   = #{MPNO} /* 처리사원번호     */
+WHERE 1=1
+AND    LAOT_STDD_DATE  = #{LAOT_STDD_DATE}
+AND    BTCH_JOB_ID  = #{BTCH_JOB_ID}
+AND    BTCH_STAT  = #{BTCH_STAT}
+</update>
+<select id="BMBND021L001B" parameterType="paramMap" resultMap="NBBMBND872JVO">
+/* 내용 : 부당보험금지급내역(ETL) 조회
+ * 매퍼명 : cmBatchMapper.BMBND021L001B
+ * 작성자 : 1021822
+ * 최종변경일 : 2020.10.28
+ * */
+SELECT MATT_NO AS MATT_NO           /* 사건번호  */
+     , PAYM_DLNG_NO AS PAYM_DLNG_NO /* 지급처리번호 */
+     , INSR_PYNO AS INSR_PYNO       /* 보험증권번호 */  
+     , #{stddYd} AS STDD_YD         /* 오늘날짜 */
+  FROM NBMADMIN.TB_BMBND021 /* 부당보험금지급내역(ETL) */
+ WHERE 1=1
+   AND ((DTAL_ADDR LIKE '%(%') OR (DTAL_ADDR LIKE '%호%') OR (DTAL_ADDR LIKE '%동%')
+    OR (DTAL_ADDR LIKE '%,%'))
+    OR ((MINS_DTAL_ADDR LIKE '%(%') OR (MINS_DTAL_ADDR LIKE '%호%') OR (MINS_DTAL_ADDR LIKE '%동%')
+    OR (MINS_DTAL_ADDR LIKE '%,%'))
+  ORDER BY MATT_NO, PAYM_DLNG_NO, INSR_PYNO ASC
+</select>
+<resultMap id="NBBMBND872JVO" type="com.hanwhalife.nbm.batch.vo.bm.NBBMBND872JVO">
+<result property="stddYd" column="STDD_YD"/>
+<result property="mattNo" column="MATT_NO"/>
+<result property="paymDlngNo" column="PAYM_DLNG_NO"/>
+<result property="insrPyno" column="INSR_PYNO"/>
+<result property="lastChmnMpno" column="LAST_CHMN_MPNO"/>
+<result property="lastChngDttm" column="LAST_CHNG_DTTM"/>
+<result property="PgmId" column="PGM_ID"/>
+<result property="frstRgtrMpno" column="FRST_RGTR_MPNO"/>
+<result property="FrstRgstDttm" column="FRST_RGST_DTTM"/>
+<result property="minsDtalAddr" column="MINS_DTAL_ADDR"/>
+<result property="dtalAddr" column="DTAL_ADDR"/></resultMap>
+
+<select id="BMBND010L001B" parameterType="paramMap" resultMap="NBBMBND872JVO2">
+/* 내용 : 환수수수료기본(ETL) 조회
+ * 매퍼명 : cmBatchMapper.BMBND010L001B
+ * 작성자 : 1021822
+ * 최종변경일 : 2020.12.07
+ * */
+SELECT STDD_YM AS STDD_YM     /* 기준년월  */
+     , FNPL_PRNO AS FNPL_PRNO /* FP고유번호 */ 
+     , #{stddYd} AS STDD_YD   /* 오늘날짜 */
+  FROM NBMADMIN.TB_BMBND010 /* 환수수수료기본(ETL) */
+ WHERE 1=1
+   AND ((DTAL_ADDR LIKE '%(%') OR (DTAL_ADDR LIKE '%호%') OR (DTAL_ADDR LIKE '%동%')
+   OR (DTAL_ADDR LIKE '%,%'))
+  ORDER BY FNPL_PRNO, STDD_YM ASC
+</select>
+<resultMap id="NBBMBND872JVO2" type="com.hanwhalife.nbm.batch.vo.bm.NBBMBND872JVO2">
+<result property="stddYd" column="STDD_YD"/>
+<result property="stddYm" column="STDD_YM"/>
+<result property="fnplPrno" column="FNPL_PRNO"/>
+<result property="lastChmnMpno" column="LAST_CHMN_MPNO"/>
+<result property="lastChngDttm" column="LAST_CHNG_DTTM"/>
+<result property="PgmId" column="PGM_ID"/>
+<result property="frstRgtrMpno" column="FRST_RGTR_MPNO"/>
+<result property="FrstRgstDttm" column="FRST_RGST_DTTM"/>
+<result property="dtalAddr" column="DTAL_ADDR"/></resultMap>
+
+<select id="BMBND900L001B" parameterType="paramMap" resultMap="NBBMBND873JVO2">
+/* 내용 : 미수채권고객기본 조회
+ * 매퍼명 : cmBatchMapper.BMBND900L001B
+ * 작성자 : 1021822
+ * 최종변경일 : 2020.12.08
+ * */
+SELECT CUST_ID AS CUST_ID   /* 고객ID */ 
+     , #{stddYd} AS STDD_YD /* 오늘날짜 */
+  FROM NBMADMIN.TB_BMBND900 /* 미수채권고객기본 */
+ WHERE 1=1
+   AND ((CUST_DTAL_ADDR LIKE '%(%') OR (CUST_DTAL_ADDR LIKE '%호%') OR (CUST_DTAL_ADDR LIKE '%동%')
+   OR (CUST_DTAL_ADDR LIKE '%,%'))
+  ORDER BY CUST_ID ASC
+</select>
+<resultMap id="NBBMBND873JVO2" type="com.hanwhalife.nbm.batch.vo.bm.NBBMBND873JVO2">
+<result property="stddYd" column="STDD_YD"/>
+<result property="custId" column="CUST_ID"/>
+<result property="lastChmnMpno" column="LAST_CHMN_MPNO"/>
+<result property="lastChngDttm" column="LAST_CHNG_DTTM"/>
+<result property="PgmId" column="PGM_ID"/>
+<result property="frstRgtrMpno" column="FRST_RGTR_MPNO"/>
+<result property="FrstRgstDttm" column="FRST_RGST_DTTM"/>
+<result property="custDtalAddr" column="CUST_DTAL_ADDR"/></resultMap>
+
+<select id="BMBND410L001B" parameterType="paramMap" resultMap="NBBMBND873JVO3">
+/* 내용 : 채무관계자발송내역 조회
+ * 매퍼명 : cmBatchMapper.BMBND410L001B
+ * 작성자 : 1021822
+ * 최종변경일 : 2020.12.11
+ * */
+SELECT BOND_ADMN_NO AS BOND_ADMN_NO   /* 채권관리번호  */ 
+     , DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ /* 채무관계자순번 */ 
+     , SEND_SEQ_NO AS SEND_SEQ_NO     /* 발송일련번호 */ 
+     , #{stddYd} AS STDD_YD           /* 오늘날짜 */
+  FROM NBMADMIN.TB_BMBND410 /* 채무관계자발송내역 */
+ WHERE 1=1
+   AND ((CUST_DTAL_ADDR LIKE '%(%') OR (CUST_DTAL_ADDR LIKE '%호%') OR (CUST_DTAL_ADDR LIKE '%동%')
+   OR (CUST_DTAL_ADDR LIKE '%,%'))
+  ORDER BY BOND_ADMN_NO, DEBT_PRTR_SEQ, SEND_SEQ_NO ASC
+</select>
+<resultMap id="NBBMBND873JVO3" type="com.hanwhalife.nbm.batch.vo.bm.NBBMBND873JVO3">
+<result property="stddYd" column="STDD_YD"/>
+<result property="bondAdmnNo" column="BOND_ADMN_NO"/>
+<result property="debtPrtrSeq" column="DEBT_PRTR_SEQ"/>
+<result property="sendSeqNo" column="SEND_SEQ_NO"/>
+<result property="lastChmnMpno" column="LAST_CHMN_MPNO"/>
+<result property="lastChngDttm" column="LAST_CHNG_DTTM"/>
+<result property="PgmId" column="PGM_ID"/>
+<result property="frstRgtrMpno" column="FRST_RGTR_MPNO"/>
+<result property="FrstRgstDttm" column="FRST_RGST_DTTM"/>
+<result property="custDtalAddr" column="CUST_DTAL_ADDR"/></resultMap>
+
+<select id="BMBND020L001B" parameterType="paramMap" resultMap="NBBMBND872JVO4">
+/* 내용 : 부당보험금기본(ETL) 조회
+ * 매퍼명 : cmBatchMapper.BMBND020L001B
+ * 작성자 : 1021822
+ * 최종변경일 : 2020.12.08
+ * */
+SELECT MATT_NO AS MATT_NO   /* 사건번호  */
+     , #{stddYd} AS STDD_YD /* 오늘날짜 */
+  FROM NBMADMIN.TB_BMBND020 /* 부당보험금기본(ETL) */
+ WHERE 1=1
+   AND ((DTAL_ADDR LIKE '%(%') OR (DTAL_ADDR LIKE '%호%') OR (DTAL_ADDR LIKE '%동%')
+   OR (DTAL_ADDR LIKE '%,%'))
+  ORDER BY MATT_NO ASC
+</select>
+<resultMap id="NBBMBND872JVO4" type="com.hanwhalife.nbm.batch.vo.bm.NBBMBND872JVO4">
+<result property="stddYd" column="STDD_YD"/>
+<result property="mattNo" column="MATT_NO"/>
+<result property="lastChmnMpno" column="LAST_CHMN_MPNO"/>
+<result property="lastChngDttm" column="LAST_CHNG_DTTM"/>
+<result property="PgmId" column="PGM_ID"/>
+<result property="frstRgtrMpno" column="FRST_RGTR_MPNO"/>
+<result property="FrstRgstDttm" column="FRST_RGST_DTTM"/>
+<result property="dtalAddr" column="DTAL_ADDR"/></resultMap>
+
+<select id="LGPPS001L001B" parameterType="paramMap" resultMap="NBBMBND873JVO4">
+/* 내용 : 기초재산신청내역 조회
+ * 매퍼명 : cmBatchMapper.LGPPS001L001B
+ * 작성자 : 1021822
+ * 최종변경일 : 2020.12.11
+ * */
+SELECT CUST_ID AS CUST_ID     /* 고객ID */
+     , PROP_RQNO AS PROP_RQNO /* 재산신청일련번호 */ 
+     , #{stddYd} AS STDD_YD   /* 오늘날짜 */
+  FROM NBMADMIN.TB_LGPPS001 /* 기초재산신청내역 */
+ WHERE 1=1
+   AND ((LCTN_DTAL_ADDR LIKE '%(%') OR (LCTN_DTAL_ADDR LIKE '%호%') OR (LCTN_DTAL_ADDR LIKE '%동%')
+   OR (LCTN_DTAL_ADDR LIKE '%,%'))
+  ORDER BY CUST_ID, PROP_RQNO ASC
+</select>
+<resultMap id="NBBMBND873JVO4" type="com.hanwhalife.nbm.batch.vo.bm.NBBMBND873JVO4">
+<result property="stddYd" column="STDD_YD"/>
+<result property="custId" column="CUST_ID"/>
+<result property="propRqno" column="PROP_RQNO"/>
+<result property="lastChmnMpno" column="LAST_CHMN_MPNO"/>
+<result property="lastChngDttm" column="LAST_CHNG_DTTM"/>
+<result property="PgmId" column="PGM_ID"/>
+<result property="frstRgtrMpno" column="FRST_RGTR_MPNO"/>
+<result property="FrstRgstDttm" column="FRST_RGST_DTTM"/>
+<result property="lctnDtalAddr" column="LCTN_DTAL_ADDR"/></resultMap>
+</mapper>
