@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="batchMapper">
+
+
+<select id="CMCOD001L001B" parameterType="paramMap" resultMap="NBCMTMP001JVO">
+/* commonMapper.CMCOD001L001B
+ */
+SELECT 
+    CODE_GRP,   /* 코드그룹 */
+    CODE_GPNM  /* 코드그룹명 */
+FROM NBMADMIN.TB_CMCOD001
+WHERE CODE_GRP LIKE '%DVCD%'
+AND CODE_GRP LIKE '%'|| UPPER(#{codeGrp})||'%'
+ORDER BY CODE_GRP
+</select>
+<update id="CMCOD001U001" parameterType="com.hanwhalife.nbm.batch.vo.NBCMTMP001JVO">
+/* 내용 : 코드그룹리스트 조회 
+ * 매퍼명 : commonMapper.CMCOD001U001
+ * 작성자 : 1073302
+ * 호출서비스 : CommonService.selectCommonGroup
+ * 최종변경일 : 2019.06.18
+ * */
+UPDATE NBMADMIN.TB_CMCOD001
+SET PGM_ID = #{pgmId}
+WHERE CODE_GRP = #{codeGrp}
+</update>
+<select id="CMCOD001L002B" parameterType="paramMap" resultMap="NBCMTMP001JVO">
+/* commonMapper.CMCOD001L002B
+ */
+SELECT  RNUM
+        , CODE_GRP
+        , CODE_GPNM
+FROM    (
+		SELECT 
+			ROWNUM RNUM,
+		    CODE_GRP,   /* 코드그룹 */
+		    CODE_GPNM  /* 코드그룹명 */
+		FROM NBMADMIN.TB_CMCOD001
+		WHERE CODE_GRP LIKE '%DVCD%'
+		AND (#{codeGrp} IS NULL OR ( #{codeGrp} IS NOT NULL AND CODE_GRP LIKE '%'|| UPPER(#{codeGrp})||'%'))
+		AND (#{CodeGpnm,jdbcType=VARCHAR} IS NULL OR ( #{CodeGpnm,jdbcType=VARCHAR} IS NOT NULL AND CODE_GPNM LIKE '%'||UPPER(#{CodeGpnm,jdbcType=VARCHAR})||'%'))
+		<![CDATA[
+		AND ROWNUM <= ((#{_page}+1) * #{_pagesize})
+		]]>
+		ORDER BY CODE_GRP
+		)
+<![CDATA[
+WHERE RNUM >  (#{_page} * #{_pagesize})
+]]>
+</select>
+<resultMap id="NBCMTMP001JVO" type="com.hanwhalife.nbm.batch.vo.NBCMTMP001JVO">
+<result property="rnum" column="RNUM"/>
+<result property="codeGrp" column="CODE_GRP"/>
+<result property="CodeGpnm" column="CODE_GPNM"/>
+<result property="pgmId" column="PGM_ID"/></resultMap>
+</mapper>
