@@ -1,0 +1,2750 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="rcBatchMapper">
+
+<resultMap id="NBRCRCP300JVO" type="com.hanwhalife.nbm.batch.vo.rc.NBRCRCP300JVO">
+<result property="rnum" column="RNUM"/>
+<result property="bondAdmnNo" column="BOND_ADMN_NO"/>
+<result property="bondSeq" column="BOND_SEQ"/>
+<result property="debtPrtrSeq" column="DEBT_PRTR_SEQ"/>
+<result property="inccAmt" column="INCC_AMT"/>
+</resultMap>
+
+<select id="BMBND007L001B" parameterType="paramMap" resultMap="NBRCRCP300JVO">
+/* 내용 : 이자금액 조회
+     * 매퍼명 : rcBatchMapper.BMBND007L001B
+     * 작성자 : 1073301
+     * 호출서비스 : NBRCRCP300J
+     * 최종변경일 : 2019.09.18
+     * */
+  SELECT 
+  Z.RNUM 
+  ,Z.BOND_ADMN_NO
+  ,Z.BOND_SEQ
+  ,Z.DEBT_PRTR_SEQ
+  ,NVL(Z.INCC_AMT,0) AS INCC_AMT
+  FROM
+  (
+    SELECT 
+    ROWNUM RNUM
+    ,U.BOND_ADMN_NO
+    ,U.BOND_SEQ
+    ,U.DEBT_PRTR_SEQ
+    ,U.INCC_AMT 
+    FROM (SELECT R.BOND_ADMN_NO AS BOND_ADMN_NO,  /* 채권관리번호 */
+           R.BOND_SEQ AS BOND_SEQ,                     /* 채권순번 */
+           R.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ,        /* 채무관계자순번 */
+           (CASE WHEN S.PSRV_YN = 'Y' THEN 0           /* 개인회생여부 */
+                 WHEN (S.BOND_KIND_CODE = '10' AND S.CVCS_DCYN = 'N') THEN 0 /* 채권종류  민사확정여부 */
+                 ELSE  R.INCC END ) AS INCC_AMT
+    FROM
+    (
+    SELECT q.BOND_ADMN_NO AS BOND_ADMN_NO,
+           q.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+           q.BOND_SEQ AS BOND_SEQ,    
+           NVL(SUM(q.INCC1),0) AS INCC
+    FROM (
+    SELECT     
+               k.BOND_ADMN_NO AS BOND_ADMN_NO,
+               k.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               k.BOND_SEQ AS BOND_SEQ, 
+               k.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               k.INCC_STDT AS INCC_STDT, 
+               k.DLGS_SQNO AS DLGS_SQNO, 
+               k.DLGS_DATE AS DLGS_DATE, 
+               k.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               k.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               k.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               k.AF_DLGS_DATE AS AF_DLGS_DATE,
+               k.RATO1 AS RATO1,
+               k.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               k.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+               k.DAYS1 AS DAYS1,
+               k.Y_DAYS1 AS Y_DAYS1,
+               k.INCC1 AS INCC1
+    FROM
+    (
+    SELECT 
+               j.BOND_ADMN_NO AS BOND_ADMN_NO,
+               j.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               j.BOND_SEQ AS BOND_SEQ, 
+               j.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               j.INCC_STDT AS INCC_STDT, 
+               j.DLGS_SQNO AS DLGS_SQNO, 
+               j.DLGS_DATE AS DLGS_DATE, 
+               j.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               j.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               j.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               j.AF_DLGS_DATE AS AF_DLGS_DATE,
+               j.RATO1 AS RATO1,
+               j.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               j.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+               j.DAYS1 AS DAYS1,
+               j.Y_DAYS1 AS Y_DAYS1,
+               TRUNC((j.TRAF_BOND_BALN * (j.RATO1/100) * (j.DAYS1 / j.Y_DAYS1)),0) AS INCC1     
+    FROM
+    (
+    SELECT 
+               i.BOND_ADMN_NO AS BOND_ADMN_NO,
+               i.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               i.BOND_SEQ AS BOND_SEQ, 
+               i.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               i.INCC_STDT AS INCC_STDT, 
+               i.DLGS_SQNO AS DLGS_SQNO, 
+               i.DLGS_DATE AS DLGS_DATE, 
+               i.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               i.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               i.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               i.AF_DLGS_DATE AS AF_DLGS_DATE,
+               i.RATO1 AS RATO1,
+               i.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               i.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+        <![CDATA[ 
+               (CASE WHEN i.RATO1 <> 0 THEN TO_NUMBER(TO_DATE(AF_DLGS_DATE1,'YYYYMMDD') - TO_DATE(BF_DLGS_DATE1,'YYYYMMDD')+1) ELSE 0 END) AS DAYS1,
+        ]]>
+               365 AS Y_DAYS1
+    FROM 
+    (SELECT 
+               h.BOND_ADMN_NO AS BOND_ADMN_NO,
+               h.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               h.BOND_SEQ AS BOND_SEQ, 
+               h.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               h.INCC_STDT AS INCC_STDT, 
+               h.DLGS_SQNO AS DLGS_SQNO, 
+               h.DLGS_DATE AS DLGS_DATE, 
+               h.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               h.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               h.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               h.AF_DLGS_DATE AS AF_DLGS_DATE, 
+        <![CDATA[ 
+           (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN 0 
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN 0 
+         ELSE 0 END) AS RATO1,
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN APCN_STRT_DATE
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN BF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS BF_DLGS_DATE1, 
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.AF_DLGS_DATE >= g.APCN_STRT_DATE AND h.AF_DLGS_DATE <= g.APCN_END_DATE THEN AF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE <= g.APCN_END_DATE AND h.AF_DLGS_DATE >= g.APCN_END_DATE THEN APCN_END_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS AF_DLGS_DATE1
+        ]]>
+     FROM 
+         (
+         SELECT
+          a.BOND_ADMN_NO, a.DEBT_PRTR_SEQ, a.BOND_SEQ,c.UCOL_BOND_AMT,d.DLGS_SQNO,  d.TRAF_BOND_BALN, d.BOND_DLGS_KDCD,
+          c.INCC_STDT, /* 이자계산시작일자 */
+          d.DLGS_DATE, 
+         (CASE d.BOND_DLGS_KDCD WHEN '10' THEN c.INCC_STDT ELSE d.DLGS_DATE END) AS BF_DLGS_DATE, /* 이관거래 최초이자기산일, 수납거래 거래일자 */
+         (SELECT DECODE(MIN(e.DLGS_DATE),NULL,TO_CHAR(SYSDATE-1,'YYYYMMDD'),MIN(e.DLGS_DATE)) 
+          FROM NBMADMIN.TB_BMBND300 e  /* 미수채권상세거래내역 */
+          WHERE 1=1
+          AND d.BOND_ADMN_NO = e.BOND_ADMN_NO(+)
+          AND d.BOND_SEQ = e.BOND_SEQ(+)
+        <![CDATA[ 
+          AND d.DLGS_DATE < e.DLGS_DATE(+)
+        ]]>
+          AND e.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND e.BOND_DLGS_KDCD(+) IN('20','25') 
+          ) AS AF_DLGS_DATE /*  채권거래종류코드(수납) 다음 거래일자(없으면 오늘) */
+          FROM 
+               NBMADMIN.TB_BMBND007 a, /* 채무관계자미수채권관계 */
+               NBMADMIN.TB_BMBND100 c, /* 미수채권상세 */
+               NBMADMIN.TB_BMBND300 d  /* 미수채권상세거래내역 */
+        WHERE 1=1
+          AND a.BOND_ADMN_NO in (SELECT BOND_ADMN_NO
+                                             FROM NBMADMIN.TB_BMBND001  
+                                           WHERE 1=1
+                                             AND BOND_KIND_CODE in('20','30')
+                                                     AND BOND_STCD = '01') 
+          AND a.BOND_RELN_STCD = '01' /* 채권관계상태코드 = '01.정상' */
+          AND a.BOND_ADMN_NO = c.BOND_ADMN_NO
+          AND a.BOND_SEQ = c.BOND_SEQ
+          AND c.BOND_STCD = '01' /* 채권상태코드 = '01.정상' */
+          AND a.BOND_ADMN_NO = d.BOND_ADMN_NO(+)
+          AND a.BOND_SEQ = d.BOND_SEQ(+)
+          AND d.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND d.BOND_DLGS_KDCD(+) IN('10','20','25') /* 채권거래종류코드(수납) */ 
+          ) h, NBMADMIN.TB_BMBND004 g /* 적용금리 */
+        WHERE 1=1
+          AND h.BOND_ADMN_NO = g.BOND_ADMN_NO(+)
+          AND h.DEBT_PRTR_SEQ = g.DEBT_PRTR_SEQ(+)
+          AND g.RGST_SQNO(+) = 1 ) i 
+        <![CDATA[ 
+          WHERE i.RATO1 > 0
+          AND i.BF_DLGS_DATE1 <> ' '
+          AND i.AF_DLGS_DATE1 <> ' '
+          ]]>
+          ) j
+
+        ) k      
+    UNION ALL
+    SELECT 
+               k.BOND_ADMN_NO AS BOND_ADMN_NO,
+               k.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               k.BOND_SEQ AS BOND_SEQ, 
+               k.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               k.INCC_STDT AS INCC_STDT, 
+               k.DLGS_SQNO AS DLGS_SQNO, 
+               k.DLGS_DATE AS DLGS_DATE, 
+               k.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               k.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               k.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               k.AF_DLGS_DATE AS AF_DLGS_DATE,
+               k.RATO1 AS RATO1,
+               k.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               k.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+               k.DAYS1 AS DAYS1,
+               k.Y_DAYS1 AS Y_DAYS1,
+               k.INCC1 AS INCC1
+    FROM
+    (
+    SELECT 
+               j.BOND_ADMN_NO AS BOND_ADMN_NO,
+               j.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               j.BOND_SEQ AS BOND_SEQ, 
+               j.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               j.INCC_STDT AS INCC_STDT, 
+               j.DLGS_SQNO AS DLGS_SQNO, 
+               j.DLGS_DATE AS DLGS_DATE, 
+               j.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               j.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               j.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               j.AF_DLGS_DATE AS AF_DLGS_DATE,
+               j.RATO1 AS RATO1,
+               j.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               j.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+               j.DAYS1 AS DAYS1,
+               j.Y_DAYS1 AS Y_DAYS1,
+               TRUNC((j.TRAF_BOND_BALN * (j.RATO1/100) * (j.DAYS1 / j.Y_DAYS1)),0) AS INCC1  
+    FROM
+    (
+    SELECT 
+               i.BOND_ADMN_NO AS BOND_ADMN_NO,
+               i.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               i.BOND_SEQ AS BOND_SEQ, 
+               i.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               i.INCC_STDT AS INCC_STDT, 
+               i.DLGS_SQNO AS DLGS_SQNO, 
+               i.DLGS_DATE AS DLGS_DATE, 
+               i.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               i.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               i.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               i.AF_DLGS_DATE AS AF_DLGS_DATE,
+               i.RATO1 AS RATO1,
+               i.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               i.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+        <![CDATA[    
+               (CASE WHEN i.RATO1 <> 0 THEN TO_NUMBER(TO_DATE(AF_DLGS_DATE1,'YYYYMMDD') - TO_DATE(BF_DLGS_DATE1,'YYYYMMDD')+1) ELSE 0 END) AS DAYS1,
+        ]]>
+               365 AS Y_DAYS1
+    FROM 
+    (SELECT 
+               h.BOND_ADMN_NO AS BOND_ADMN_NO,
+               h.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               h.BOND_SEQ AS BOND_SEQ, 
+               h.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               h.INCC_STDT AS INCC_STDT, 
+               h.DLGS_SQNO AS DLGS_SQNO, 
+               h.DLGS_DATE AS DLGS_DATE, 
+               h.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               h.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               h.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               h.AF_DLGS_DATE AS AF_DLGS_DATE, 
+        <![CDATA[    
+           (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN 0 
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN 0 
+         ELSE 0 END) AS RATO1,
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN APCN_STRT_DATE
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN BF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS BF_DLGS_DATE1, 
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.AF_DLGS_DATE >= g.APCN_STRT_DATE AND h.AF_DLGS_DATE <= g.APCN_END_DATE THEN AF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE <= g.APCN_END_DATE AND h.AF_DLGS_DATE >= g.APCN_END_DATE THEN APCN_END_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS AF_DLGS_DATE1
+        ]]>
+     FROM 
+         (SELECT
+          a.BOND_ADMN_NO, a.DEBT_PRTR_SEQ, a.BOND_SEQ,c.UCOL_BOND_AMT,d.DLGS_SQNO,  d.TRAF_BOND_BALN, d.BOND_DLGS_KDCD,
+          c.INCC_STDT, /* 이자계산시작일자 */
+          d.DLGS_DATE, 
+         (CASE d.BOND_DLGS_KDCD WHEN '10' THEN c.INCC_STDT ELSE d.DLGS_DATE END) AS BF_DLGS_DATE, /* 이관거래 최초이자기산일, 수납거래 거래일자 */
+         (SELECT DECODE(MIN(e.DLGS_DATE),NULL,TO_CHAR(SYSDATE-1,'YYYYMMDD'),MIN(e.DLGS_DATE)) 
+          FROM NBMADMIN.TB_BMBND300 e  /* 미수채권상세거래내역 */
+          WHERE 1=1
+          AND d.BOND_ADMN_NO = e.BOND_ADMN_NO(+)
+          AND d.BOND_SEQ = e.BOND_SEQ(+)
+        <![CDATA[    
+          AND d.DLGS_DATE < e.DLGS_DATE(+)
+        ]]>
+          AND e.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND e.BOND_DLGS_KDCD(+) IN('20','25') 
+          ) AS AF_DLGS_DATE /* 채권거래종류코드(수납)  다음 거래일자(없으면 오늘) */
+          FROM 
+               NBMADMIN.TB_BMBND007 a, /* 채무관계자미수채권관계 */
+               NBMADMIN.TB_BMBND100 c, /* 미수채권상세 */
+               NBMADMIN.TB_BMBND300 d  /* 미수채권상세거래내역 */
+        WHERE 1=1
+          AND a.BOND_ADMN_NO IN (SELECT BOND_ADMN_NO
+                                             FROM NBMADMIN.TB_BMBND001  
+                                           WHERE 1=1
+                                             AND BOND_KIND_CODE in('20','30')
+                                                     AND BOND_STCD = '01') 
+          AND a.BOND_RELN_STCD = '01' /* 채권관계상태코드 = '01.정상' */
+          AND a.BOND_ADMN_NO = c.BOND_ADMN_NO
+          AND a.BOND_SEQ = c.BOND_SEQ
+          AND c.BOND_STCD = '01' /* 채권상태코드 = '01.정상' */
+          AND a.BOND_ADMN_NO = d.BOND_ADMN_NO(+)
+          AND a.BOND_SEQ = d.BOND_SEQ(+)
+          AND d.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND d.BOND_DLGS_KDCD(+) IN('10','20','25') /* 채권거래종류코드(수납) */  
+          ) h, NBMADMIN.TB_BMBND004 g /* 적용금리 */
+        WHERE 1=1
+          AND h.BOND_ADMN_NO = g.BOND_ADMN_NO(+)
+          AND h.DEBT_PRTR_SEQ = g.DEBT_PRTR_SEQ(+)
+          AND g.RGST_SQNO(+) = 2 ) i
+        <![CDATA[ 
+          WHERE i.RATO1 > 0
+          AND i.BF_DLGS_DATE1 <> ' '
+          AND i.AF_DLGS_DATE1 <> ' '
+          ]]>
+          ) j 
+          WHERE 1=1
+
+          ) k 
+    UNION ALL
+    SELECT 
+               k.BOND_ADMN_NO AS BOND_ADMN_NO,
+               k.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               k.BOND_SEQ AS BOND_SEQ, 
+               k.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               k.INCC_STDT AS INCC_STDT, 
+               k.DLGS_SQNO AS DLGS_SQNO, 
+               k.DLGS_DATE AS DLGS_DATE, 
+               k.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               k.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               k.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               k.AF_DLGS_DATE AS AF_DLGS_DATE,
+               k.RATO1 AS RATO1,
+               k.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               k.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+               k.DAYS1 AS DAYS1,
+               k.Y_DAYS1 AS Y_DAYS1,
+               k.INCC1 AS INCC1
+    FROM
+    (
+    SELECT 
+               j.BOND_ADMN_NO AS BOND_ADMN_NO,
+               j.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               j.BOND_SEQ AS BOND_SEQ, 
+               j.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               j.INCC_STDT AS INCC_STDT, 
+               j.DLGS_SQNO AS DLGS_SQNO, 
+               j.DLGS_DATE AS DLGS_DATE, 
+               j.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               j.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               j.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               j.AF_DLGS_DATE AS AF_DLGS_DATE,
+               j.RATO1 AS RATO1,
+               j.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               j.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+               j.DAYS1 AS DAYS1,
+               j.Y_DAYS1 AS Y_DAYS1,
+               TRUNC((j.TRAF_BOND_BALN * (j.RATO1/100) * (j.DAYS1 / j.Y_DAYS1)),0) AS INCC1  
+    FROM
+    (
+    SELECT 
+               i.BOND_ADMN_NO AS BOND_ADMN_NO,
+               i.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               i.BOND_SEQ AS BOND_SEQ, 
+               i.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               i.INCC_STDT AS INCC_STDT, 
+               i.DLGS_SQNO AS DLGS_SQNO, 
+               i.DLGS_DATE AS DLGS_DATE, 
+               i.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               i.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               i.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               i.AF_DLGS_DATE AS AF_DLGS_DATE,
+               i.RATO1 AS RATO1,
+               i.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+               i.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+        <![CDATA[    
+               (CASE WHEN i.RATO1 <> 0 THEN TO_NUMBER(TO_DATE(AF_DLGS_DATE1,'YYYYMMDD') - TO_DATE(BF_DLGS_DATE1,'YYYYMMDD')+1) ELSE 0 END) AS DAYS1,
+        ]]>
+               365 AS Y_DAYS1
+    FROM 
+    (SELECT 
+               h.BOND_ADMN_NO AS BOND_ADMN_NO,
+               h.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               h.BOND_SEQ AS BOND_SEQ, 
+               h.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               h.INCC_STDT AS INCC_STDT, 
+               h.DLGS_SQNO AS DLGS_SQNO, 
+               h.DLGS_DATE AS DLGS_DATE, 
+               h.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               h.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               h.BF_DLGS_DATE AS BF_DLGS_DATE, 
+               h.AF_DLGS_DATE AS AF_DLGS_DATE, 
+        <![CDATA[    
+           (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN 0 
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN 0 
+         ELSE 0 END) AS RATO1,
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN APCN_STRT_DATE
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN BF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS BF_DLGS_DATE1, 
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.AF_DLGS_DATE >= g.APCN_STRT_DATE AND h.AF_DLGS_DATE <= g.APCN_END_DATE THEN AF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE <= g.APCN_END_DATE AND h.AF_DLGS_DATE >= g.APCN_END_DATE THEN APCN_END_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS AF_DLGS_DATE1
+        ]]>
+     FROM 
+         (SELECT
+          a.BOND_ADMN_NO, a.DEBT_PRTR_SEQ, a.BOND_SEQ,c.UCOL_BOND_AMT,d.DLGS_SQNO,  d.TRAF_BOND_BALN, d.BOND_DLGS_KDCD,
+          c.INCC_STDT, /* 이자계산시작일자 */
+          d.DLGS_DATE, 
+         (CASE d.BOND_DLGS_KDCD WHEN '10' THEN c.INCC_STDT ELSE d.DLGS_DATE END) AS BF_DLGS_DATE, /* 이관거래 최초이자기산일, 수납거래 거래일자 */
+         (SELECT DECODE(MIN(e.DLGS_DATE),NULL,TO_CHAR(SYSDATE-1,'YYYYMMDD'),MIN(e.DLGS_DATE)) 
+          FROM NBMADMIN.TB_BMBND300 e  /* 미수채권상세거래내역 */
+          WHERE 1=1
+          AND d.BOND_ADMN_NO = e.BOND_ADMN_NO(+)
+          AND d.BOND_SEQ = e.BOND_SEQ(+)
+        <![CDATA[    
+          AND d.DLGS_DATE < e.DLGS_DATE(+)
+        ]]>
+          AND e.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND e.BOND_DLGS_KDCD(+) IN('20','25') 
+          ) AS AF_DLGS_DATE /* 채권거래종류코드(수납)  다음 거래일자(없으면 오늘) */
+          FROM 
+               NBMADMIN.TB_BMBND007 a, /* 채무관계자미수채권관계 */
+               NBMADMIN.TB_BMBND100 c, /* 미수채권상세 */
+               NBMADMIN.TB_BMBND300 d  /* 미수채권상세거래내역 */
+        WHERE 1=1
+          AND a.BOND_ADMN_NO IN (SELECT BOND_ADMN_NO
+                                             FROM NBMADMIN.TB_BMBND001  
+                                           WHERE 1=1
+                                             AND BOND_KIND_CODE in('20','30')
+                                                     AND BOND_STCD = '01') 
+          AND a.BOND_RELN_STCD = '01' /* 채권관계상태코드 = '01.정상' */
+          AND a.BOND_ADMN_NO = c.BOND_ADMN_NO
+          AND a.BOND_SEQ = c.BOND_SEQ
+          AND c.BOND_STCD = '01' /* 채권상태코드 = '01.정상' */
+          AND a.BOND_ADMN_NO = d.BOND_ADMN_NO(+)
+          AND a.BOND_SEQ = d.BOND_SEQ(+)
+          AND d.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND d.BOND_DLGS_KDCD(+) IN('10','20','25') /* 채권거래종류코드(수납) */  
+          ) h, NBMADMIN.TB_BMBND004 g /* 적용금리 */
+        WHERE 1=1
+          AND h.BOND_ADMN_NO = g.BOND_ADMN_NO(+)
+          AND h.DEBT_PRTR_SEQ = g.DEBT_PRTR_SEQ(+)
+          AND g.RGST_SQNO(+) = 3 ) i 
+        <![CDATA[ 
+          WHERE i.RATO1 > 0
+          AND i.BF_DLGS_DATE1 <> ' '
+          AND i.AF_DLGS_DATE1 <> ' '
+          ]]>
+          ) j 
+          WHERE 1=1
+
+          ) k 
+          ) q GROUP BY q.BOND_ADMN_NO , q.DEBT_PRTR_SEQ, q.BOND_SEQ
+    ) R, NBMADMIN.TB_BMBND001 S
+    WHERE 1=1
+    AND R.BOND_ADMN_NO = S.BOND_ADMN_NO
+    AND S.BOND_KIND_CODE IN ('20','30')) U
+    WHERE 1=1 
+    <![CDATA[
+    AND ROWNUM <= ((#{_page}+1) * #{_pagesize})
+    ]]>
+    ORDER BY U.BOND_ADMN_NO, U.BOND_SEQ, U.DEBT_PRTR_SEQ 
+  ) Z
+  WHERE Z.RNUM > (#{_page} * #{_pagesize})
+</select>
+
+<update id="BMBND007U001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCP300JVO">
+/* 내용 : 이자금액 변경
+     * 매퍼명 : rcBatchMapper.BMBND007U001B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCP300J
+     * 최종변경일 : 2019.09.18
+     * */
+  UPDATE NBMADMIN.TB_BMBND007
+  SET 
+    LAST_CHMN_MPNO ='BATCH'
+    ,PGM_ID = #{pgmId}
+    ,LAST_CHNG_DTTM = SYSDATE 
+    ,LAST_INCC_DT =TO_CHAR(SYSDATE,'YYYYMMDD')
+    ,INCC_AMT = #{inccAmt}
+  WHERE BOND_ADMN_NO = #{bondAdmnNo} 
+  AND BOND_SEQ = #{bondSeq}
+  AND DEBT_PRTR_SEQ = #{debtPrtrSeq}
+</update>
+
+<resultMap id="NBRCRCC100JVO" type="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO">
+<result property="a01" column="A01"/>
+<result property="a02" column="A02"/>
+<result property="a03" column="A03"/>
+<result property="a04" column="A04"/>
+<result property="a05" column="A05"/>
+<result property="a06" column="A06"/>
+<result property="a07" column="A07"/>
+<result property="a08" column="A08"/>
+<result property="a09" column="A09"/>
+<result property="a10" column="A10"/>
+<result property="a11" column="A11"/>
+<result property="a12" column="A12"/>
+<result property="a13" column="A13"/>
+<result property="a14" column="A14"/>
+<result property="a15" column="A15"/>
+<result property="a16" column="A16"/>
+<result property="a17" column="A17"/>
+<result property="a18" column="A18"/>
+<result property="a19" column="A19"/>
+<result property="a20" column="A20"/>
+<result property="a21" column="A21"/>
+<result property="a22" column="A22"/>
+<result property="a23" column="A23"/>
+<result property="a24" column="A24"/>
+<result property="a25" column="A25"/>
+<result property="a26" column="A26"/>
+<result property="a27" column="A27"/>
+<result property="p01" column="P01"/>
+<result property="p02" column="P02"/>
+<result property="p03" column="P03"/>
+<result property="d01" column="D01"/>
+<result property="d02" column="D02"/>
+<result property="d03" column="D03"/>
+<result property="d04" column="D04"/>
+<result property="d05" column="D05"/>
+<result property="d06" column="D06"/>
+<result property="d07" column="D07"/>
+<result property="d08" column="D08"/>
+<result property="d09" column="D09"/>
+<result property="d10" column="D10"/>
+<result property="d11" column="D11"/>
+<result property="d12" column="D12"/>
+<result property="dlgsSqno" column="DLGS_SQNO"/>
+<result property="bondAdmnNo" column="BOND_ADMN_NO"/>
+<result property="prscCompPrdt" column="PRSC_COMP_PRDT"/>
+<result property="dbcrDvcd" column="DBCR_DVCD"/>
+<result property="acctDvsnCode" column="ACCT_DVSN_CODE"/>
+<result property="amt" column="AMT"/>
+<result property="valSmbolFg" column="VAL_SMBOL_FG"/>
+<result property="noteDc" column="NOTE_dC"/>
+</resultMap>
+
+<select id="RCRCC300L001B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L001B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+  SELECT
+        DLGS_TYPE_CODE AS A01 /*거래유형코드_A01_5*/
+        ,'NB_미수채권' AS A02 /*원천시스템코드_A02_20*/
+        ,DLNG_DEPT_CODE AS A03 /*처리부서_A03_8*/
+        ,DLMN_MPNO AS A04 /*처리사원_A04_8*/
+        ,TO_CHAR(LAST_CHNG_DTTM, 'yyyyMMdd') AS A05 /*처리일자_A05_8*/
+        ,TO_CHAR(LAST_CHNG_DTTM, 'HH24mmSS') AS A06 /*처리시간_A06_6*/
+        ,TO_CHAR(SYSDATE, 'yyyyMMdd') AS A07 /*송신일자_A07_8*/
+        ,TO_CHAR(SYSDATE, 'HH24mmSS') AS A08 /*송신시간_A08_6*/
+        ,'' AS A09 /*그룹코드_A09_20*/
+        <choose>
+            <when test='dlgsTypeCode.equals("NB001")'>
+                ,DLMN_MPNO AS A10 /*사원코드_A10_8*/            
+            </when>
+            <when test='dlgsTypeCode.equals("NB001")'>
+                ,DLMN_MPNO AS A10 /*사원코드_A10_8*/            
+            </when>
+            <otherwise>
+                ,DLMN_MPNO AS A10 /*처리사원_A10_8*/
+            </otherwise>
+        </choose>    
+        <choose>
+            <when test='dlgsTypeCode.equals("NB008")'>
+               ,'' AS A11 /*증권번호_A11_14*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB008")'>
+               ,'' AS A11 /*증권번호_A11_14*/
+            </when>
+            <otherwise>
+               ,BOND_ADMN_NO AS A11 /*증권번호_A11_14*/
+            </otherwise>
+        </choose>            
+        ,TRRV_CNFM_KEY AS A12 /*송수신확인_A12_40*/
+        <choose>                
+            <when test='dlgsTypeCode.equals("NB005")'>
+          ,STDD_DATE AS A13 /*전표일자_A13_8 결산조정은 영업일 중 말일 기준일자로 들어옴 */
+          </when>
+            <otherwise>
+            ,SLIP_DATE AS A13 /*전표일자_A13_8*/
+            </otherwise>
+        </choose>             
+        ,EVID_DATE AS A14 /*증빙일자_A14_8*/
+        ,STDD_DATE AS A15 /*지급입금기준일자_A15_8*/
+        ,PAYM_METD_DVSN AS A16 /*지급입금방법구분_A16_1*/
+        ,'KRW' AS A17 /*통화_A17_5*/
+        ,PUBL_DPCD AS A18/*발행부서_A18_5*/
+        ,PRPO_DEPT_CODE AS A19 /*발의부서_A19_5*/
+        ,'000000' AS A20 /*폴더코드_A20_6*/
+        ,'A0000' AS A21 /*펀드코드_A21_5*/
+        ,'00000000' AS A22 /*상품분류_A22_8*/
+        ,'00000000' AS A23 /*임시_A23_8*/
+        ,'00000000000000' AS A24 /*임시_A24_14*/
+        ,NVL(ERP_DLPL_CODE, '') AS A25 /*거래처코드_A25_14*/
+        ,CNCL_DVSN AS A26 /*취소여부_A26_1*/
+        ,DLNG_STAT_CODE AS A27 /*처리상태_A27_3*/
+        ,BSNS_DVSN_CODE AS P01 /*업무구분_P01_3*/
+        ,RECV_METD_DVCD AS P02 /*수납방법_P02_2*/
+        ,BOND_KIND_CODE AS P03 /*채권종류_P03_1*/
+        <choose>
+            <when test='dlgsTypeCode.equals("NB001")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*미수금발생*/
+            ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*HA 수수료지급액*/
+            ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*FP 수수료지급액*/
+            ,DECODE(SIGN(DLGS_AMT4), -1, '-'||LPAD(ABS(DLGS_AMT4), 14, 0), LPAD(ABS(DLGS_AMT4), 15, 0)) AS D04 /*TRI 수수료지금액*/
+            ,DECODE(SIGN(DLGS_AMT5), -1, '-'||LPAD(ABS(DLGS_AMT5), 14, 0), LPAD(ABS(DLGS_AMT5), 15, 0)) AS D05 /*GFP 수수료지지급액*/
+            ,DECODE(SIGN(DLGS_AMT6), -1, '-'||LPAD(ABS(DLGS_AMT6), 14, 0), LPAD(ABS(DLGS_AMT6), 15, 0)) AS D06 /*AM 수수료지급액*/
+            ,DECODE(SIGN(DLGS_AMT7), -1, '-'||LPAD(ABS(DLGS_AMT7), 14, 0), LPAD(ABS(DLGS_AMT7), 15, 0)) AS D07 /*TCM 수수료지급액*/                
+            </when>
+            <when test='dlgsTypeCode.equals("NB002")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*보험해약금액*/
+            ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*원금 미수금_일반 충당*/
+            ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*원금 미수금_부당보험금 충당*/
+            ,DECODE(SIGN(DLGS_AMT4), -1, '-'||LPAD(ABS(DLGS_AMT4), 14, 0), LPAD(ABS(DLGS_AMT4), 15, 0)) AS D04 /*원금 잡이익_부당보험금 충당*/
+            ,DECODE(SIGN(DLGS_AMT5), -1, '-'||LPAD(ABS(DLGS_AMT5), 14, 0), LPAD(ABS(DLGS_AMT5), 15, 0)) AS D05 /*원금 상각금 충당*/
+            ,DECODE(SIGN(DLGS_AMT6), -1, '-'||LPAD(ABS(DLGS_AMT6), 14, 0), LPAD(ABS(DLGS_AMT6), 15, 0)) AS D06 /*이자 상환금 충당*/
+            ,DECODE(SIGN(DLGS_AMT7), -1, '-'||LPAD(ABS(DLGS_AMT7), 14, 0), LPAD(ABS(DLGS_AMT7), 15, 0)) AS D07 /*비용 상환금 충당*/
+            ,DECODE(SIGN(DLGS_AMT8), -1, '-'||LPAD(ABS(DLGS_AMT8), 14, 0), LPAD(ABS(DLGS_AMT8), 15, 0)) AS D08 /*공탁금 상환금 충당*/
+            ,DECODE(SIGN(DLGS_AMT9), -1, '-'||LPAD(ABS(DLGS_AMT9), 14, 0), LPAD(ABS(DLGS_AMT9), 15, 0)) AS D09 /*가수금 발생*/
+            ,DECODE(SIGN(DLGS_AMT10), -1, '-'||LPAD(ABS(DLGS_AMT10), 14, 0), LPAD(ABS(DLGS_AMT10), 15, 0)) AS D10 /*가수금 정리*/
+            ,DECODE(SIGN(DLGS_AMT), -1, '-'||LPAD(ABS(DLGS_AMT), 14, 0), LPAD(ABS(DLGS_AMT), 15, 0)) AS D11 /*원금 잡이익_HA 충당*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB003")'>
+          ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*실입금액*/
+          ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*원금 미수금_일반 충당*/
+          ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*원금 미수금_부당보험금 충당*/
+          ,DECODE(SIGN(DLGS_AMT4), -1, '-'||LPAD(ABS(DLGS_AMT4), 14, 0), LPAD(ABS(DLGS_AMT4), 15, 0)) AS D04 /*원금 미수금_부당보험금 충당*/
+          ,DECODE(SIGN(DLGS_AMT5), -1, '-'||LPAD(ABS(DLGS_AMT5), 14, 0), LPAD(ABS(DLGS_AMT5), 15, 0)) AS D05 /*원금 상각금 충당*/
+          ,DECODE(SIGN(DLGS_AMT6), -1, '-'||LPAD(ABS(DLGS_AMT6), 14, 0), LPAD(ABS(DLGS_AMT6), 15, 0)) AS D06 /*이자 상환금 충당*/
+          ,DECODE(SIGN(DLGS_AMT7), -1, '-'||LPAD(ABS(DLGS_AMT7), 14, 0), LPAD(ABS(DLGS_AMT7), 15, 0)) AS D07 /*비용 상환금 충당*/
+          ,DECODE(SIGN(DLGS_AMT8), -1, '-'||LPAD(ABS(DLGS_AMT8), 14, 0), LPAD(ABS(DLGS_AMT8), 15, 0)) AS D08 /*공탁금 상환금 충당*/
+          ,DECODE(SIGN(DLGS_AMT9), -1, '-'||LPAD(ABS(DLGS_AMT9), 14, 0), LPAD(ABS(DLGS_AMT9), 15, 0)) AS D09 /*가수금 발생*/
+          ,DECODE(SIGN(DLGS_AMT10), -1, '-'||LPAD(ABS(DLGS_AMT10), 14, 0), LPAD(ABS(DLGS_AMT10), 15, 0)) AS D10 /*가수금 정리*/  
+          ,DECODE(SIGN(DLGS_AMT), -1, '-'||LPAD(ABS(DLGS_AMT), 14, 0), LPAD(ABS(DLGS_AMT), 15, 0)) AS D11 /*원금 잡이익_HA 충당*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB004")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*충당금설정액*/
+            ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*미수금_일반 상각금액*/
+            ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*미수금_부당보험금 상각금액*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB005")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*충당금설정액*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB006")'>
+            ,DLGS_AMT1 AS D01 /*가수금 정리*/
+            ,DLGS_AMT2 AS D02 /*실송금액*/
+            ,DTAL_CT1  AS D03 /*증빙종류*/
+            ,DTAL_CT2  AS D04  /*적요*/
+            ,DTAL_CT3  AS D05 /*품의번호*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB007")'>
+            ,DLGS_AMT1 AS D01 /*총지급액*/
+            ,DLGS_AMT2 AS D02 /*비용 발생금액*/
+            ,DLGS_AMT3 AS D03 /*공탁금 발생금액*/
+            ,DLGS_AMT4 AS D04 /*공급가액+세액*/
+            ,DTAL_CT1  AS D05 /*증빙종류*/
+            ,DTAL_CT2  AS D06  /*적요*/
+            ,DTAL_CT3  AS D07 /*품의번호*/     
+            </when>
+            <when test='dlgsTypeCode.equals("NB008")'>
+            ,DLGS_AMT1 AS D01 /*총지급액*/
+            ,DLGS_AMT2 AS D02 /*공급가액*/
+            ,DLGS_AMT3 AS D03 /*세액*/
+            --,'-'||LPAD(DLGS_AMT4, 14, 0) AS D04 /*공급가액+세액*/ 
+            ,DLGS_AMT4 AS D04 /*공급가액+세액*/
+            ,DTAL_CT1  AS D05 /*증빙종류*/
+            ,DTAL_CT2  AS D06  /*적요*/
+            ,DTAL_CT3  AS D07 /*품의번호*/     
+            </when>                                                                 
+            <otherwise>
+          ,DLGS_AMT1 AS D01
+          ,DLGS_AMT2 AS D02
+          ,DLGS_AMT3 AS D03
+          ,DLGS_AMT4 AS D04
+          ,DLGS_AMT5 AS D05
+          ,DLGS_AMT6 AS D06
+          ,DLGS_AMT7 AS D07
+          ,DLGS_AMT8 AS D08
+          ,DLGS_AMT9 AS D09
+          ,DLGS_AMT10 AS D10            
+          ,DLGS_AMT AS D11
+            </otherwise>
+        </choose>                 
+  FROM NBMADMIN.TB_RCRCC300
+  WHERE DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND SLIP_DATE = #{slipDate}
+</select>
+
+
+<select id="RCRCC300L004B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L004B (거래유형 NB002)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,'NB_미수채권' 												AS A02 /*원천시스템코드_A02_20*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+        ,TO_CHAR(A.LAST_CHNG_DTTM, 'yyyyMMdd') 		AS A05 /*처리일자_A05_8*/
+        ,TO_CHAR(A.LAST_CHNG_DTTM, 'HH24mmSS') 	AS A06 /*처리시간_A06_6*/
+        ,TO_CHAR(SYSDATE, 'yyyyMMdd') 						AS A07 /*송신일자_A07_8*/
+        ,TO_CHAR(SYSDATE, 'HH24mmSS')		 			AS A08 /*송신시간_A08_6*/
+        ,'' 																	AS A09 /*그룹코드_A09_20*/
+        ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.TRRV_CNFM_KEY 											AS A12 /*송수신확인_A12_40*/
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.EVID_DATE 													AS A14 /*증빙일자_A14_8*/
+        ,A.STDD_DATE 												AS A15 /*지급입금기준일자_A15_8*/
+        ,A.PAYM_METD_DVSN 										AS A16 /*지급입금방법구분_A16_1*/
+        ,'KRW' 															AS A17 /*통화_A17_5*/
+        ,A.PUBL_DPCD 												AS A18/*발행부서_A18_5*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,'000000' 														AS A20 /*폴더코드_A20_6*/
+        ,'A0000' 														AS A21 /*펀드코드_A21_5*/
+        ,'00000000' 													AS A22 /*상품분류_A22_8*/
+        ,'00000000' 													AS A23 /*임시_A23_8*/
+        ,'00000000000000' 											AS A24 /*임시_A24_14*/
+        ,NVL(A.ERP_DLPL_CODE, '') 								AS A25 /*거래처코드_A25_14*/
+        ,A.CNCL_DVSN 												AS A26 /*취소여부_A26_1*/
+        ,A.DLNG_STAT_CODE 										AS A27 /*처리상태_A27_3*/
+        ,A.BSNS_DVSN_CODE 										AS P01 /*업무구분_P01_3*/
+        ,A.RECV_METD_DVCD 										AS P02 /*수납방법_P02_2*/
+        ,A.BOND_KIND_CODE 										AS P03 /*채권종류_P03_1*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO		/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD			/* ERP분개내역 차대구분코드 01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+  FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'01' 				AS DBCR_DVCD				/**/
+				,'25400006' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'16400001' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'16400012' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT3 	AS AMT							/*D03*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'44700001' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT4 	AS AMT							/*D04*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'16500001' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT5 	AS AMT							/*D05*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'44700001' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT6 	AS AMT							/*D06*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'01' 				AS DBCR_DVCD				/**/
+				,'52450601' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT7 	AS AMT							/*D07*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'16600401' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT8 	AS AMT							/*D08*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+  		UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'25400063' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT9 	AS AMT							/*D09*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'01' 				AS DBCR_DVCD				/**/
+				,'25400063' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT10 AS AMT							/*D10*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  			AND SLIP_DATE 			= #{slipDate}	
+		    UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'44700001' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT 	AS AMT							/*D11*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  			AND SLIP_DATE 			= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'02' 				AS DBCR_DVCD				/**/
+				,'99999999' 	AS ACCT_DVSN_CODE		/**/
+				,DLGS_AMT12 AS AMT							/*D12*/
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+
+
+<select id="RCRCC300L010B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L010B (거래유형 NB001)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+     SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/
+  FROM   NBMADMIN.TB_RCRCC300 A,
+    (SELECT  BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'1'         		 	AS DBCR_DVCD				/*차변*/
+        ,'16400001'    	AS ACCT_DVSN_CODE		/*미수금_일반*/
+        ,DLGS_AMT1  		AS AMT							/*D01*/
+        ,'1'					AS VAL_SMBOL_FG			/*값부호*/
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+        AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+        AND SLIP_DATE  	       	= #{slipDate}     
+      UNION ALL
+      SELECT BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'2'         			AS DBCR_DVCD				/*대변*/
+        ,'51910630'   		AS ACCT_DVSN_CODE		/*비례수당_HA E&C수수료*/
+        ,DLGS_AMT2  		AS AMT							/*D02*/
+        ,'1'					AS VAL_SMBOL_FG			/*값부호*/        
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+       AND DLGS_TYPE_CODE   	= #{dlgsTypeCode}
+        AND SLIP_DATE  	       	= #{slipDate}
+      UNION ALL
+      SELECT BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'2'         		AS DBCR_DVCD					/*대변*/
+        ,'51910640'   	AS ACCT_DVSN_CODE			/*비례수당_FP E&C수수료*/
+        ,DLGS_AMT3  	AS AMT								/*D03*/
+        ,'1'				AS VAL_SMBOL_FG				/*값부호*/        
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+        AND DLGS_TYPE_CODE  	= #{dlgsTypeCode}
+        AND SLIP_DATE         		= #{slipDate}
+      UNION ALL
+      SELECT BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'2'         		AS DBCR_DVCD					/*대변*/
+        ,'51911028'  	AS ACCT_DVSN_CODE			/*비례수당_TRI E&C수수료*/
+        ,DLGS_AMT4  	AS AMT								/*D04*/
+        ,'1'				AS VAL_SMBOL_FG				/*값부호*/        
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+       AND DLGS_TYPE_CODE  	= #{dlgsTypeCode}
+        AND SLIP_DATE  		    = #{slipDate}
+      UNION ALL
+      SELECT BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'2'         		AS DBCR_DVCD					/*대변*/
+        ,'51910730'   	AS ACCT_DVSN_CODE			/*비례수당_GFP E&C수수료*/
+        ,DLGS_AMT5  	AS AMT								/*D05*/
+        ,'1'				AS VAL_SMBOL_FG				/*값부호*/        
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+        AND DLGS_TYPE_CODE  	= #{dlgsTypeCode}
+        AND SLIP_DATE         		= #{slipDate}
+       UNION ALL
+      SELECT BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'2'         		AS DBCR_DVCD					/*대변*/
+        ,'51980130'   	AS ACCT_DVSN_CODE			/*기타제비_대리점_AM E&C수수료*/
+        ,DLGS_AMT6  	AS AMT								/*D06*/
+        ,'1'				AS VAL_SMBOL_FG				/*값부호*/        
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+        AND DLGS_TYPE_CODE  	= #{dlgsTypeCode}
+        AND SLIP_DATE         		= #{slipDate}   
+       UNION ALL
+      SELECT BOND_ADMN_NO
+        ,DLGS_SQNO
+        ,'2'         		AS DBCR_DVCD					/*대변*/
+        ,'99999999'   	AS ACCT_DVSN_CODE			/*가수금 한화생명*/
+        ,DLGS_AMT12 AS AMT								/*D12*/
+        ,'1'				AS VAL_SMBOL_FG				/*값부호*/                
+      FROM NBMADMIN.TB_RCRCC300
+      WHERE 1=1
+        AND DLGS_TYPE_CODE  	= #{dlgsTypeCode}
+        AND SLIP_DATE         		= #{slipDate}
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO	=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO			=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  AND A.SLIP_DATE 				= #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+
+<select id="RCRCC300L020B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L020B (거래유형 NB002)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+  FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'25400006' 	AS ACCT_DVSN_CODE		/*가수금_생존*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/				
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16400001' 	AS ACCT_DVSN_CODE		/*미수금_일반*/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16400012' 	AS ACCT_DVSN_CODE		/*미수금_부당보험금*/
+				,DLGS_AMT3 	AS AMT							/*D03*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'44700001' 	AS ACCT_DVSN_CODE		/*잡이익_기타*/
+				,DLGS_AMT4 	AS AMT							/*D04*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16500001' 	AS ACCT_DVSN_CODE		/*대손충당금_미수금*/
+				,DLGS_AMT5 	AS AMT							/*D05*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'44700001' 	AS ACCT_DVSN_CODE		/*잡이익_기타*/
+				,DLGS_AMT6 	AS AMT							/*D06*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'52450601' 	AS ACCT_DVSN_CODE		/*유_수수료_기타수수료_채권추심*/
+				,DLGS_AMT7 	AS AMT							/*D07*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16600401' 	AS ACCT_DVSN_CODE		/*공탁금*/
+				,DLGS_AMT8 	AS AMT							/*D08*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+  		UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'25400063' 	AS ACCT_DVSN_CODE		/*가수금_미수채권*/
+				,DLGS_AMT9 	AS AMT							/*D09*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*대변*/
+				,'25400063' 	AS ACCT_DVSN_CODE		/*가수금_미수채권*/
+				,DLGS_AMT10 AS AMT							/*D10*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  			AND SLIP_DATE 			= #{slipDate}	
+		    UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'44700001' 	AS ACCT_DVSN_CODE		/*잡이익_기타*/
+				,DLGS_AMT 	AS AMT							/*D11*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  			AND SLIP_DATE 			= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'99999999' 	AS ACCT_DVSN_CODE		/*가수금_한화생명*/
+				,DLGS_AMT12 AS AMT							/*D12*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/								
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L030B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L030B (거래유형 NB003)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'11130101' 	AS ACCT_DVSN_CODE		/*보통예금_일반*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16400001' 	AS ACCT_DVSN_CODE		/*미수금_일반*/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16400012' 	AS ACCT_DVSN_CODE		/*미수금_부당보험금*/
+				,DLGS_AMT3 	AS AMT							/*D03*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'44700001' 	AS ACCT_DVSN_CODE		/*잡이익_기타*/
+				,DLGS_AMT4 	AS AMT							/*D04*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16500001' 	AS ACCT_DVSN_CODE		/*대손충당금_미수금*/
+				,DLGS_AMT5 	AS AMT							/*D05*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'44700001' 	AS ACCT_DVSN_CODE		/*잡이익_기타*/
+				,DLGS_AMT6 	AS AMT							/*D06*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'52450601' 	AS ACCT_DVSN_CODE		/*유_수수료_기타수수료_채권추심*/
+				,DLGS_AMT7 	AS AMT							/*D07*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16600401' 	AS ACCT_DVSN_CODE		/*공탁금*/
+				,DLGS_AMT8 	AS AMT							/*D08*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+  		UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'25400063' 	AS ACCT_DVSN_CODE		/*가수금_미수채권*/
+				,DLGS_AMT9 	AS AMT							/*D09*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*대변*/
+				,'25400063' 	AS ACCT_DVSN_CODE		/*가수금_미수채권*/
+				,DLGS_AMT10 AS AMT							/*D10*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  			AND SLIP_DATE 			= #{slipDate}	
+		    UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'44700001' 	AS ACCT_DVSN_CODE		/*잡이익_기타*/
+				,DLGS_AMT 	AS AMT							/*D11*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  			AND SLIP_DATE 			= #{slipDate}
+		   UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'99999999' 	AS ACCT_DVSN_CODE		/*가수금_한화생명*/
+				,DLGS_AMT12 AS AMT							/*D12*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L040B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L040B (거래유형 NB004)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+  FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'16500001' 	AS ACCT_DVSN_CODE		/*대손충당금_미수금*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16400001' 	AS ACCT_DVSN_CODE		/*미수금_일반*/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16400012' 	AS ACCT_DVSN_CODE		/*미수금_부당보험금*/
+				,DLGS_AMT3 	AS AMT							/*D03*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		 
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L050B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L050B (거래유형 NB005)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+  FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'53500002' 	AS ACCT_DVSN_CODE		/*대손상각비_미수금*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'16500001' 	AS ACCT_DVSN_CODE		/*대손충당금_미수금*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/												
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L060B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L060B (거래유형 NB006)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+  FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'25400063' 	AS ACCT_DVSN_CODE		/*가수금_미수채권*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'25200001' 	AS ACCT_DVSN_CODE		/*미지급금_일반*/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}	 
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L070B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L070B (거래유형 NB007)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+  FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'24200001' 	AS ACCT_DVSN_CODE		/*미지급금_일반*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'52450601' 	AS ACCT_DVSN_CODE		/*유_수수료_기타수수료_채권추심*/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'16600401' 	AS ACCT_DVSN_CODE		/*공탁금*/
+				,DLGS_AMT3 	AS AMT							/*D03*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		 
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L080B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L080B (거래유형 NB008)
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT
+         A.DLGS_TYPE_CODE 										AS A01 /*거래유형코드_A01_5*/
+        ,A.DLNG_DEPT_CODE 										AS A03 /*처리부서_A03_8*/         
+        ,A.RCNM_EMPL_NO											AS A04 /*승인자사번_A04_8*/
+	    ,A.FRST_RGTR_MPNO 										AS A10 /*등록사원_A10_8*/ 
+        ,B.BOND_ADMN_NO 										AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE 													AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE 										AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO												AS DLGS_SQNO	/*거래일련번호*/
+		,B.DBCR_DVCD          										AS DBCR_DVCD	/*ERP분개내역01.차변, 02.대변*/
+		,B.ACCT_DVSN_CODE  										AS ACCT_DVSN_CODE /* ERP분개내역 계정코드*/
+		,B.AMT					   										AS AMT	                    /* ERP분개내역 금액*/
+		,B.VAL_SMBOL_FG											AS VAL_SMBOL_FG		/* ERP분개내역 값부호*/		
+FROM   NBMADMIN.TB_RCRCC300 A,
+		(SELECT  BOND_ADMN_NO
+				,DLGS_SQNO
+				,'2' 				AS DBCR_DVCD				/*대변*/
+				,'24200001' 	AS ACCT_DVSN_CODE		/*미지급금_일반*/
+				,DLGS_AMT1 	AS AMT							/*D01*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'91100014' 	AS ACCT_DVSN_CODE		/*Tax_Clearing*/
+				,DLGS_AMT2 	AS AMT							/*D02*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'91100014' 	AS ACCT_DVSN_CODE		/*Tax_Clearing*/
+				,DLGS_AMT3 	AS AMT							/*D03*/
+        		,'1'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		    AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}
+		  UNION ALL
+		  SELECT BOND_ADMN_NO
+				,DLGS_SQNO
+				,'1' 				AS DBCR_DVCD				/*차변*/
+				,'91100014' 	AS ACCT_DVSN_CODE		/*Tax_Clearing*/
+				,DLGS_AMT4 	AS AMT							/*D04*/
+        		,'2'				AS VAL_SMBOL_FG			/*값부호*/						
+		  FROM NBMADMIN.TB_RCRCC300
+		  WHERE 1=1
+		   AND DLGS_TYPE_CODE 	= #{dlgsTypeCode}
+  			AND SLIP_DATE 				= #{slipDate}		  
+ ) B
+  WHERE 1=1
+  AND A.BOND_ADMN_NO=B.BOND_ADMN_NO
+  AND A.DLGS_SQNO=B.DLGS_SQNO
+  AND A.DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND A.SLIP_DATE = #{slipDate}
+  AND B.AMT <> 0
+]]>
+</select>
+<select id="RCRCC300L005B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC300L005B
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC102J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT        
+         A.DLGS_TYPE_CODE 					AS A01 /*거래유형코드*/
+        ,A.BOND_ADMN_NO                    AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_DATE                         		AS A13 /*전표일자_A13_8*/
+        ,A.PRPO_DEPT_CODE                    AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO                            AS DLGS_SQNO    /*거래일련번호*/  
+  FROM   NBMADMIN.TB_RCRCC300 A
+  WHERE 1=1
+  AND DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND SLIP_DATE = #{slipDate}
+
+]]>
+</select>
+
+<select id="RCRCC200L001B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회
+     * 매퍼명 : rcBatchMapper.RCRCC200L001B
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC102J
+     * 최종변경일 : 
+     * */
+<![CDATA[     
+  SELECT        
+         A.TRAN_TP_CD                    		AS A01 /*거래유형코드*/
+        ,A.BOND_ADMN_NO                    AS A11 /*증권번호_A11_14*/        
+        ,A.SLIP_PRPO_DATE                      AS A13 /*전표일자_A13_8*/
+        ,A.SLIP_PRPO_DPCD                     AS A19 /*발의부서_A19_5*/
+        ,A.DLGS_SQNO                            AS DLGS_SQNO    /*거래일련번호*/  
+  FROM   NBMADMIN.TB_RCRCC200 A
+  WHERE 1=1
+  AND TRAN_TP_CD = #{dlgsTypeCode}
+  AND SLIP_PRPO_DATE = #{slipDate}
+
+]]>
+</select>
+
+<select id="BMBND100L001B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 채권기본 시효완성예정일자 변경 대상 조회
+     * 매퍼명 : rcBatchMapper.BMBND100L001B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+<![CDATA[     
+    SELECT
+        Z.BOND_ADMN_NO
+        ,Z.PRSC_COMP_PRDT
+    FROM
+    (
+    SELECT  
+            A.BOND_ADMN_NO
+            ,TO_CHAR(ADD_MONTHS(TO_DATE(MIN(A.OCCR_DATE), 'yyyyMMdd')-1, 60), 'yyyyMMdd') AS PRSC_COMP_PRDT
+            ,CASE
+            WHEN MAX(B.PRSC_COMP_PRDT) = '' THEN 'Y' /*예정일이 없으면 변경대상*/
+            WHEN TO_DATE(MAX(B.PRSC_COMP_PRDT), 'yyyyMMdd') > ADD_MONTHS(TO_DATE(MIN(A.OCCR_DATE), 'yyyyMMdd')-1, 60) THEN 'N' /*기본예정일 발생일+5년보다 크면  변경하지 않음*/
+            ELSE 'Y' /*그외에는 변경*/
+            END PRDT_YN
+    FROM
+    NBMADMIN.TB_BMBND100 A, NBMADMIN.TB_BMBND001 B
+    WHERE EXISTS (
+        SELECT
+           X.BOND_ADMN_NO          
+        FROM NBMADMIN.TB_BMBND040 X, NBMADMIN.TB_BMBND300 Y
+        WHERE 1=1
+            AND X.DLNG_DATE = #{slipDate}
+            AND X.BOND_ADMN_NO = Y.BOND_ADMN_NO
+            AND X.DLGS_DATE = Y.DLGS_DATE
+            AND X.DLGS_SQNO = Y.DLGS_SQNO 
+          AND X.BOND_DLGS_KDCD IN ('20','25') /*수납*/
+          AND X.FUND_DVCD IN ('2','4','5','6')
+          AND X.DLGS_STCD = '01' /*01.정상*/          
+          AND Y.TRAF_BOND_BALN = 0 /*수납 후 채권순번원금 완납*/
+          AND X.BOND_ADMN_NO = B.BOND_ADMN_NO
+      GROUP BY X.BOND_ADMN_NO    
+    )
+    AND A.BOND_ADMN_NO = B.BOND_ADMN_NO
+    AND A.UCOL_BOND_BALN > 0 /*수납 후 채권순번원금잔액이 있는 대상 중 발생일이 가장 작은*/
+    GROUP BY A.BOND_ADMN_NO
+  ) Z
+  WHERE Z.PRDT_YN = 'Y'
+]]>
+</select>
+
+<update id="BMBND001U001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO">
+/* 내용 : 채권기본 시효완성예정일자 변경 
+     * 매퍼명 : rcBatchMapper.BMBND001U001B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+  UPDATE NBMADMIN.TB_BMBND001
+  SET 
+      LAST_CHMN_MPNO ='BATCH'
+      ,PGM_ID = #{pgmId}
+      ,LAST_CHNG_DTTM = SYSDATE 
+      ,PRSC_COMP_PRDT = #{prscCompPrdt}
+  WHERE BOND_ADMN_NO = #{bondAdmnNo}
+</update>
+
+<select id="BMBND100L002B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감시 채권기본 당일 변경 대상 조회 
+     * 매퍼명 : rcBatchMapper.BMBND100L002B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+     SELECT
+        BOND_ADMN_NO    /*채권관리번호*/
+     FROM NBMADMIN.TB_BMBND001
+     WHERE PGM_ID = 'NBRCRCC100J'
+     AND LAST_CHMN_MPNO ='BATCH'
+     AND TO_CHAR(LAST_CHNG_DTTM, 'yyyyMMdd') = TO_CHAR(SYSDATE, 'yyyyMMdd')
+</select>     
+<insert id="BMBND002I001" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO">
+    /* 내용 : 미수채권기본이력 추가
+     * 매퍼명 : rcBatchMapper.BMBND002I001
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+    INSERT INTO NBMADMIN.TB_BMBND002    /*미수채권이력*/
+    (
+        BOND_ADMN_NO    /*채권관리번호*/
+        ,CHNG_SEQ_NO    /*변경일련번호*/
+        ,LAST_CHMN_MPNO /*최종변경자사번*/
+        ,LAST_CHNG_DTTM /*최종변경일시*/
+        ,PGM_ID /*프로그램ID*/
+        ,FRST_RGTR_MPNO /*최초등록자사번*/
+        ,FRST_RGST_DTTM /*최초등록일시*/
+        ,BOND_KIND_CODE /*채권종류코드*/
+        ,BOND_DVCD  /*채권구분코드*/
+        ,BOND_STCD  /*채권상태코드*/
+        ,SALE_CHNL_DVCD /*판매채널구분코드*/
+        ,FNPL_PRNO  /*FP고유번호*/
+        ,MATT_NO    /*사건번호*/
+        ,MATT_NAME  /*사건명*/
+        ,MDBT_CUST_ID   /*주채무자고객ID*/
+        ,TRRC_RGST_DT   /*이수관등록일자*/
+        ,BOND_DCSN_DT   /*채권확정일자*/
+        ,JDAF_COST  /*법무비용금액*/
+        ,JDAC_BALN  /*법무비용잔액*/
+        ,DPST_AMT   /*공탁금액*/
+        ,DPST_BALN  /*공탁잔액*/
+        ,CVCS_DCYN  /*민사확정여부*/
+        ,CVCS_DCSN_DT   /*민사확정일자*/
+        ,BDAM_END_DATE  /*채권관리종결일자*/
+        ,BOND_END_RSCD  /*채권종결사유코드*/
+        ,PRSC_COMP_PRDT /*시효완성예정일자*/
+        ,PRSC_COMP_DT   /*시효완성일자*/
+        ,PRSC_STOP_DATE /*시효중단일자*/
+        ,PRSC_STOP_RSCD /*시효중단사유코드*/
+        ,COMS_YN    /*위탁여부*/
+        ,TRST_NTPR_CODE /*위탁업체코드*/
+        ,PSRV_YN    /*개인회생여부*/
+        ,BKRT_IMYN  /*파산면책여부*/
+        ,APPR_ORDR_DVCD /*충당순서구분코드*/
+        ,SSPN_DLNG_OBYN /*가수처리대상여부*/
+        ,BDBT_RDMP_DATE /*대손상각일자*/
+        ,STDD_YM  /*기준년월*/
+    )
+    (
+    SELECT 
+        BOND_ADMN_NO    /*채권관리번호*/
+        ,(SELECT NVL((
+            SELECT MAX(CHNG_SEQ_NO) FROM NBMADMIN.TB_BMBND002 WHERE BOND_ADMN_NO = #{bondAdmnNo}
+            ), 0)+1 FROM DUAL
+        ) AS CHNG_SEQ_NO    /*변경일련번호*/      
+        ,LAST_CHMN_MPNO /*최종변경자사번*/
+        ,LAST_CHNG_DTTM /*최종변경일시*/
+        ,PGM_ID /*프로그램ID*/
+        ,FRST_RGTR_MPNO /*최초등록자사번*/
+        ,FRST_RGST_DTTM /*최초등록일시*/
+        ,BOND_KIND_CODE /*채권종류코드*/
+        ,BOND_DVCD  /*채권구분코드*/
+        ,BOND_STCD  /*채권상태코드*/
+        ,SALE_CHNL_DVCD /*판매채널구분코드*/
+        ,FNPL_PRNO  /*FP고유번호*/
+        ,MATT_NO    /*사건번호*/
+        ,MATT_NAME  /*사건명*/
+        ,MDBT_CUST_ID   /*주채무자고객ID*/
+        ,TRRC_RGST_DT   /*이수관등록일자*/
+        ,BOND_DCSN_DT   /*채권확정일자*/
+        ,JDAF_COST  /*법무비용금액*/
+        ,JDAC_BALN  /*법무비용잔액*/
+        ,DPST_AMT   /*공탁금액*/
+        ,DPST_BALN  /*공탁잔액*/
+        ,CVCS_DCYN  /*민사확정여부*/
+        ,CVCS_DCSN_DT   /*민사확정일자*/
+        ,BDAM_END_DATE  /*채권관리종결일자*/
+        ,BOND_END_RSCD  /*채권종결사유코드*/
+        ,PRSC_COMP_PRDT /*시효완성예정일자*/
+        ,PRSC_COMP_DT   /*시효완성일자*/
+        ,PRSC_STOP_DATE /*시효중단일자*/
+        ,PRSC_STOP_RSCD /*시효중단사유코드*/
+        ,COMS_YN    /*위탁여부*/
+        ,TRST_NTPR_CODE /*위탁업체코드*/
+        ,PSRV_YN    /*개인회생여부*/
+        ,BKRT_IMYN  /*파산면책여부*/
+        ,APPR_ORDR_DVCD /*충당순서구분코드*/
+        ,SSPN_DLNG_OBYN /*가수처리대상여부*/
+        ,BDBT_RDMP_DATE /*대손상각일자*/
+        ,STDD_YM  /*기준년월*/
+    FROM NBMADMIN.TB_BMBND001
+    WHERE BOND_ADMN_NO = #{bondAdmnNo} /*채권관리번호*/
+    )
+</insert>
+<insert id="RCRCC200I002B"  parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO">
+/* 내용 : ERP분개내역 등록
+     * 매퍼명 : rcBatchMapper.RCRCC200I002B
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 :
+     * */
+   INSERT INTO NBMADMIN.TB_RCRCC200 
+   (
+   		 SLIP_PRPO_DATE                 /*전표발의일자*/
+		,SLIP_PRPO_DPCD                /*전표발의부서코드*/
+		,SEQ_NO                         	/*일련번호*/
+		,DBCR_DVCD                      /*차대구분코드*/
+		,ACCT_DVSN_CODE             /*계정구분코드*/
+		,LAST_CHMN_MPNO            /*최종변경자사번*/
+		,LAST_CHNG_DTTM              /*최종변경일시*/
+		,PGM_ID                         	/*프로그램ID*/
+		,FRST_RGTR_MPNO               /*최초등록자사번*/
+		,FRST_RGST_DTTM                /*최초등록일시*/
+		,RCNT_DVCD                       /*승인구분코드*/
+		,AMT                            		/*금액*/
+		,INPT_DATE_TIME                 /*입력일시*/
+		,INPT_MAN_MPNO               /*입력자사번*/
+		,BOND_ADMN_NO               /*채권관리번호*/
+		,DLGS_SQNO                      /*거래일련번호*/
+		,COMPANY_CD                   /*회사코드*/
+		,INT_ID                         		/*인터페이스ID*/
+		,TRAN_TP_CD                     /*거래유형코드*/
+		,STD_YM                         	/*기준년월*/
+		,LINE_NO                        	/*라인번호*/
+		,RFDOCU_NO                      /*참조전표번호*/
+		,VAL_SMBOL_FG                  /*값부호구분*/
+		,NOTE_DC                        	/*적요내역*/
+		,PARTNER_CD                     /*거래처코드*/
+		,PAY_DT                         	/*지급일*/
+		,PROC_DEPT_CD                  /*처리부서코드*/
+		,TRNM_YN                        	/*전송여부*/	
+   )
+  SELECT
+     	 #{a13}										   							AS SLIP_PRPO_DATE 	/*전표발의일자*/
+    	,#{a19}                         											AS SLIP_PRPO_DPCD 	/*전표발의부서코드*/
+    	,(SELECT NVL((SELECT MAX(X.SEQ_NO) 	
+      		FROM NBMADMIN.TB_RCRCC200 X 
+      		WHERE 1=1
+      		AND X.SLIP_PRPO_DATE    = #{a13}	
+      		AND X.SLIP_PRPO_DPCD   = #{a19}), 0)+1 
+      		FROM DUAL ) 		                          					AS SEQ_NO 				/*일련번호*/
+    	,#{dbcrDvcd}      				   	          							AS DBCR_DVCD 			/*차대구분코드 01.차변, 02.대변*/
+    	,#{acctDvsnCode}             				 	 					AS ACCT_DVSN_CODE /*계정구분코드*/
+    	,#{a04}                        						 					AS LAST_CHMN_MPNO /*최종변경자사번*/
+    	,SYSDATE                        					 					AS LAST_CHNG_DTTM /*최종변경일시*/
+    	,'NBRCRCC100J'                 					 					AS PGM_ID 				/*프로그램ID*/
+    	,#{a10}                        						 					AS FRST_RGTR_MPNO 	/*최초등록자사번*/
+    	,SYSDATE                        					 					AS FRST_RGST_DTTM 	/*최초등록일시*/
+    	,''                           						 						AS RCNT_DVCD 			/*승인구분코드*/
+    	,#{amt}                         											AS AMT 					/*금액*/
+    	,SYSDATE                       					 					AS INPT_DATE_TIME 	/*입력일시*/
+    	,#{a04}                         											AS INPT_MAN_MPNO 	/*입력자사번*/
+    	,#{a11}                         											AS BOND_ADMN_NO 	/*채권관리번호*/
+    	,to_number(#{dlgsSqno})        			 	 					AS DLGS_SQNO 			/*거래일렵번호*/
+		,''		        															AS COMPANY_CD		/*회사코드*/
+		,''   																	    AS INT_ID					/*인터페이스ID*/
+		,#{a01}    																AS TRAN_TP_CD			/*거래유형코드*/
+		,substr(#{a13},0,6) 													AS STD_YM				/*기준년월,발의년월*/
+		,#{a13}||#{a19}||
+		  (SELECT NVL((SELECT MAX(X.SEQ_NO) 	
+	      FROM NBMADMIN.TB_RCRCC200 X 
+	      WHERE 1=1
+	      AND X.SLIP_PRPO_DATE = #{a13}	
+	      AND X.SLIP_PRPO_DPCD = #{a19}), 0)+1 
+	      FROM DUAL )      													AS INE_NO				
+	      /*라인번호:전표발의일자+전표발의부서코드+일련번호*/
+		,#{a13}||#{a19}															AS RFDOCU_NO			
+		/*참조전표번호:전표발의일자+전표발의부서코드*/
+		,#{valSmbolFg}														AS VAL_SMBOL_FG		/*값부호구분*/
+		,''        																	AS NOTE_DC				/*적요내용*/
+		,(SELECT
+			B.FNPL_PRNO
+			FROM NBMADMIN.TB_BMBND001 B /*미수채권기본*/
+			WHERE 1=1
+			AND B.BOND_ADMN_NO=#{a11} 
+			AND ROWNUM =1
+			)    																	AS PARTNER_CD			/*거래처코드(FP고유번호)*/
+		,''        																	AS PAY_DT					/*지급일*/
+		,#{a03}  																	AS PROC_DEPT_CD		/*처리부서코드*/			
+		,'N'																		AS TRNM_YN				/*전송여부*/
+  FROM DUAL
+</insert>
+<resultMap id="NBRCRCC100JVO2" type="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO2">
+<result property="fnplPrno" column="FNPL_PRNO"/>
+<result property="guinPolyNo" column="GUIN_POLY_NO"/>
+<result property="guinRecvAmt" column="GUIN_RECV_AMT"/>
+<result property="guinDvcd" column="GUIN_DVCD"/>
+</resultMap>
+<select id="BMBMD040L001B" parameterType="paramMap" resultMap="NBRCRCC100JVO2">
+    /* 내용 : 보증보험 보증보험수납금액 조회
+     * 매퍼명 : rcBatchMapper.BMBMD040L001B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+<![CDATA[     
+  SELECT
+      A.FNPL_PRNO
+      ,A.GUIN_POLY_NO
+      ,(A.GUIN_RECV_AMT+B.RECV_PRCP) AS GUIN_RECV_AMT
+      ,A.GUIN_DVCD
+  FROM
+  (
+  SELECT
+      FNPL_PRNO
+      ,GUIN_POLY_NO
+      ,GUIN_JOIN_DATE
+      ,GUIN_END_DATE
+      ,JOIN_AMT
+      ,PREV_REAM
+      ,GUIN_RECV_AMT
+      ,GUIN_DVCD  
+  FROM NBMADMIN.TB_BMBND011
+  WHERE GUIN_DVCD = '02'
+  ) A,
+  (
+  SELECT
+      D.FNPL_PRNO
+      ,SUM(B.RECV_PRCP) AS RECV_PRCP /*수납원금*/
+      FROM NBMADMIN.TB_BMBND040 A
+      , NBMADMIN.TB_BMBND300 B
+      , NBMADMIN.TB_BMBND100 C
+      , NBMADMIN.TB_BMBND001 D
+  WHERE A.RCVY_DVCD = '10' /*10.보증사변제(정착)*/
+      AND A.BOND_ADMN_NO = B.BOND_ADMN_NO
+      AND A.DLGS_SQNO = B.DLGS_SQNO
+      AND B.BOND_ADMN_NO = C.BOND_ADMN_NO
+      AND B.BOND_SEQ = C.BOND_SEQ
+      AND C.OCAT_DVCD = '03' --03 정착
+      AND A.DLGS_STCD = '01'
+      AND A.BOND_ADMN_NO = D.BOND_ADMN_NO
+      AND B.RECV_PRCP > 0
+      AND A.DLNG_DATE = #{slipDate}
+  GROUP BY D.FNPL_PRNO
+  ) B
+  WHERE 1=1
+  AND A.FNPL_PRNO = B.FNPL_PRNO
+  UNION ALL
+  SELECT
+      A.FNPL_PRNO
+      ,A.GUIN_POLY_NO
+      ,(A.GUIN_RECV_AMT+SUM(A.RECV_PRCP)) AS GUIN_RECV_AMT
+      ,A.GUIN_DVCD    
+  FROM
+  (
+      SELECT
+          A.FNPL_PRNO
+          ,A.GUIN_POLY_NO
+          ,A.GUIN_JOIN_DATE
+          ,MIN(A.GUIN_JOIN_DATE) OVER (PARTITION BY A.FNPL_PRNO, A.GUIN_DVCD, B.CNTT_DATE, B.RGST_SQNO) AS MIN_GUIN_JOIN_DATE
+          ,A.GUIN_END_DATE
+          ,B.CNTT_DATE
+          ,B.RGST_SQNO
+          ,A.JOIN_AMT
+          ,A.PREV_REAM
+          ,A.GUIN_RECV_AMT
+          ,B.RECV_PRCP
+          ,A.GUIN_DVCD
+      FROM
+      (
+      SELECT
+          FNPL_PRNO
+          ,GUIN_POLY_NO
+          ,GUIN_JOIN_DATE
+          ,GUIN_END_DATE      
+          ,JOIN_AMT
+          ,PREV_REAM
+          ,GUIN_RECV_AMT
+          ,GUIN_DVCD
+      FROM NBMADMIN.TB_BMBND011
+      WHERE GUIN_DVCD IN ('01', '11')
+      ) A
+      ,(
+      SELECT
+          C.CNTT_DATE
+          ,C.RGST_SQNO
+          ,SUM(B.RECV_PRCP) AS RECV_PRCP
+          ,C.OCAT_DVCD
+          ,D.FNPL_PRNO
+      FROM NBMADMIN.TB_BMBND040 A
+      , NBMADMIN.TB_BMBND300 B
+      , NBMADMIN.TB_BMBND100 C
+      , NBMADMIN.TB_BMBND001 D
+      WHERE A.RCVY_DVCD = '09' /*보증사변제(신계약)*/
+          AND A.BOND_ADMN_NO = B.BOND_ADMN_NO
+          AND A.DLGS_SQNO = B.DLGS_SQNO
+          AND B.BOND_ADMN_NO = C.BOND_ADMN_NO
+          AND B.BOND_SEQ = C.BOND_SEQ
+          AND C.OCAT_DVCD = '02' --02.계약
+          AND A.DLGS_STCD = '01'
+          AND A.BOND_ADMN_NO = D.BOND_ADMN_NO
+          AND B.RECV_PRCP > 0
+          AND A.DLNG_DATE = #{slipDate}
+      GROUP BY 
+          C.CNTT_DATE
+          ,C.RGST_SQNO
+          ,C.OCAT_DVCD
+          ,D.FNPL_PRNO        
+      ) B
+      WHERE 1=1
+      AND A.FNPL_PRNO = B.FNPL_PRNO
+      AND B.CNTT_DATE BETWEEN A.GUIN_JOIN_DATE AND A.GUIN_END_DATE
+  ) A 
+  WHERE A.GUIN_JOIN_DATE = A.MIN_GUIN_JOIN_DATE
+  GROUP BY 
+      A.FNPL_PRNO
+      ,A.GUIN_POLY_NO
+      ,A.GUIN_JOIN_DATE
+      ,A.GUIN_END_DATE
+      ,A.GUIN_RECV_AMT    
+      ,A.GUIN_DVCD 
+]]>     
+</select>     
+<update id="BMBND011U001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO2">
+    /* 내용 : 보증보험 수납금액 수정 
+     * 매퍼명 : rcBatchMapper.BMBND011U001B
+     * 작성자 : 1073421
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+     UPDATE NBMADMIN.TB_BMBND011 
+     SET
+     LAST_CHMN_MPNO ='BATCH'
+     ,PGM_ID = #{pgmId}
+     ,LAST_CHNG_DTTM = SYSDATE 
+     ,GUIN_RECV_AMT = #{guinRecvAmt}     
+     WHERE FNPL_PRNO = #{fnplPrno} 
+     AND GUIN_POLY_NO = #{guinPolyNo}
+     AND GUIN_DVCD = #{guinDvcd}     
+</update>     
+<select id="BMBND007L002B" parameterType="paramMap" resultMap="NBRCRCP300JVO">
+/* 내용 : 이자금액 조회
+     * 매퍼명 : rcBatchMapper.BMBND007L002B
+     * 작성자 : 1073301
+     * 호출서비스 : NBRCRCP300J
+     * 최종변경일 : 2019.09.18
+     * */
+  SELECT 
+  Z.RNUM 
+  ,Z.BOND_ADMN_NO
+  ,Z.BOND_SEQ
+  ,Z.DEBT_PRTR_SEQ
+  ,NVL(Z.INCC_AMT,0) AS INCC_AMT
+  FROM
+  (
+    SELECT 
+    ROWNUM RNUM
+    ,U.BOND_ADMN_NO
+    ,U.BOND_SEQ
+    ,U.DEBT_PRTR_SEQ
+    ,U.INCC_AMT 
+    FROM (SELECT R.BOND_ADMN_NO AS BOND_ADMN_NO,  /* 채권관리번호 */
+                1 AS DEBT_PRTR_SEQ,
+                1 AS BOND_SEQ,
+                (CASE WHEN S.PSRV_YN = 'Y' THEN 0           /* 개인회생여부 */
+                  WHEN (S.BOND_KIND_CODE = '10' AND S.CVCS_DCYN = 'N') THEN 0 /* 채권종류  민사확정여부 */
+                  ELSE  R.INCC_AMT END ) AS INCC_AMT
+          FROM
+          (
+          SELECT
+                k.BOND_ADMN_NO AS BOND_ADMN_NO,
+            SUM(INCC1) AS INCC_AMT
+                FROM
+               (
+               SELECT 
+               j.BOND_ADMN_NO AS BOND_ADMN_NO,
+               j.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+               j.BOND_SEQ AS BOND_SEQ, 
+               j.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+               j.INCC_STDT AS INCC_STDT, 
+               j.DLGS_SQNO AS DLGS_SQNO, 
+               j.DLGS_DATE AS DLGS_DATE, 
+               j.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+               j.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+               j.BF_DLGS_DATE AS BF_DLGS_DATE, 
+            j.AF_DLGS_DATE AS AF_DLGS_DATE,
+              j.RATO1 AS RATO1,
+             j.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+            j.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+            j.DAYS1 AS DAYS1,
+            j.Y_DAYS1 AS Y_DAYS1,
+            TRUNC((j.TRAF_BOND_BALN * (j.RATO1/100) * (j.DAYS1 / j.Y_DAYS1)),0) AS INCC1     
+FROM
+(
+SELECT 
+           i.BOND_ADMN_NO AS BOND_ADMN_NO,
+           i.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+           i.BOND_SEQ AS BOND_SEQ, 
+           i.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+           i.INCC_STDT AS INCC_STDT, 
+           i.DLGS_SQNO AS DLGS_SQNO, 
+           i.DLGS_DATE AS DLGS_DATE, 
+           i.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+           i.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+           i.BF_DLGS_DATE AS BF_DLGS_DATE, 
+       i.AF_DLGS_DATE AS AF_DLGS_DATE,
+         i.RATO1 AS RATO1,
+       i.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+       i.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+<![CDATA[
+       (CASE WHEN i.RATO1 <> 0 THEN (TO_NUMBER(TO_DATE(AF_DLGS_DATE1,'YYYYMMDD') - TO_DATE(BF_DLGS_DATE1,'YYYYMMDD'))+1) ELSE 0 END) AS DAYS1,
+]]> 
+      365 AS Y_DAYS1
+FROM 
+(SELECT 
+           h.BOND_ADMN_NO AS BOND_ADMN_NO,
+           h.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+           h.BOND_SEQ AS BOND_SEQ, 
+           h.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+           h.INCC_STDT AS INCC_STDT, 
+           h.DLGS_SQNO AS DLGS_SQNO, 
+           h.DLGS_DATE AS DLGS_DATE, 
+           h.UCOL_BOND_BALN AS TRAF_BOND_BALN,   
+           h.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+           h.BF_DLGS_DATE AS BF_DLGS_DATE, 
+       h.AF_DLGS_DATE AS AF_DLGS_DATE, 
+<![CDATA[
+           (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN 0 
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN 0 
+         ELSE 0 END) AS RATO1,
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN APCN_STRT_DATE
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN BF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS BF_DLGS_DATE1, 
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.AF_DLGS_DATE >= g.APCN_STRT_DATE AND h.AF_DLGS_DATE <= g.APCN_END_DATE THEN AF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE <= g.APCN_END_DATE AND h.AF_DLGS_DATE >= g.APCN_END_DATE THEN APCN_END_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS AF_DLGS_DATE1
+]]>
+FROM 
+     (SELECT
+      D.BOND_ADMN_NO, 1 AS DEBT_PRTR_SEQ, 1 AS BOND_SEQ, C.UCOL_BOND_AMT, D.RECV_PRCP,
+    (SELECT SUM(RECV_PRCP) 
+       FROM NBMADMIN.TB_BMBND040 E 
+    WHERE 1=1 
+      AND E.BOND_ADMN_NO = D.BOND_ADMN_NO
+      AND E.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND E.BOND_DLGS_KDCD(+) IN('10','20','25')
+          AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+<![CDATA[
+      AND E.DLGS_DATE <= D.DLGS_DATE
+]]>
+       ) AS DLGS_TOT, /* 누적수납금액 */
+    (CASE BOND_DLGS_KDCD WHEN '10' THEN C.UCOL_BOND_AMT ELSE C.UCOL_BOND_AMT - (SELECT SUM(RECV_PRCP) 
+       FROM NBMADMIN.TB_BMBND040 E 
+    WHERE 1=1 
+      AND E.BOND_ADMN_NO = D.BOND_ADMN_NO
+      AND E.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND E.BOND_DLGS_KDCD(+) IN('10','20','25')
+          AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+<![CDATA[
+      AND E.DLGS_DATE <= D.DLGS_DATE
+]]>
+       ) END) AS UCOL_BOND_BALN,
+    D.DLGS_SQNO, d.BOND_DLGS_KDCD, 
+    C.INCC_STDT, /* 이자계산시작일자 */
+    (CASE D.BOND_DLGS_KDCD WHEN '10' THEN C.INCC_STDT ELSE D.DLGS_DATE END) AS DLGS_DATE,
+   (CASE D.BOND_DLGS_KDCD WHEN '10' THEN C.INCC_STDT ELSE TO_CHAR(TO_DATE(D.DLGS_DATE,'YYYYMMDD')+1,'YYYYMMDD') END) AS BF_DLGS_DATE,
+   /*최초이자기산일, 수납거래 거래일자 */
+   (SELECT 
+    CASE BOND_DLGS_KDCD WHEN '10' THEN (SELECT NVL(TO_CHAR(MIN(TO_DATE(E.DLGS_DATE,'YYYYMMDD')),'YYYYMMDD'),TO_CHAR(SYSDATE,'YYYYMMDD'))
+                                          FROM NBMADMIN.TB_BMBND040 E  /* 미수채권상세거래내역 */
+                       WHERE 1=1
+                       AND D.BOND_ADMN_NO = E.BOND_ADMN_NO(+)
+                       AND E.BOND_DLGS_KDCD(+) IN('20','25')    
+                       AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+                       AND E.DLGS_STCD(+) = '01' )
+    
+    ELSE (SELECT NVL(TO_CHAR(MIN(TO_DATE(E.DLGS_DATE,'YYYYMMDD')),'YYYYMMDD'),TO_CHAR(SYSDATE,'YYYYMMDD'))
+                                          FROM NBMADMIN.TB_BMBND040 E  /* 미수채권상세거래내역 */
+                       WHERE 1=1
+                       AND D.BOND_ADMN_NO = e.BOND_ADMN_NO(+)
+                    <![CDATA[
+                       AND D.DLGS_DATE < e.DLGS_DATE(+)
+                       AND E.BOND_DLGS_KDCD(+) IN('20','25')
+                    ]]>     
+                       AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+                       AND E.DLGS_STCD(+) = '01' ) END
+    FROM DUAL ) AS AF_DLGS_DATE /*  채권거래종류코드(수납) 다음 거래일자(없으면 오늘) */
+    FROM 
+         (SELECT U.BOND_ADMN_NO, MIN(OCCR_DATE) AS INCC_STDT, 
+          SUM(UCOL_BOND_AMT) - (ACCU_FEE_AMT+PREV_SBAT+FIRE_BEFO_REAM+GUIN_SPAY_AMT+SEPR_FEE_SBAT+ETC_SBAT) AS UCOL_BOND_AMT
+          FROM  NBMADMIN.TB_BMBND100 U
+               , NBMADMIN.TB_BMBND001 V
+           , NBMADMIN.TB_BMBND010 W
+      WHERE U.BOND_ADMN_NO IN (SELECT BOND_ADMN_NO
+                                             FROM NBMADMIN.TB_BMBND001  
+                                           WHERE 1=1
+                                             AND BOND_KIND_CODE = '10'
+                                                     AND BOND_STCD = '01'
+                            ) 
+               AND U.BOND_ADMN_NO = V.BOND_ADMN_NO
+         AND V.FNPL_PRNO = W.FNPL_PRNO
+         AND W.STDD_YM = (SELECT MAX(STDD_YM) FROM NBMADMIN.TB_BMBND010
+                        WHERE FNPL_PRNO = (SELECT DISTINCT(B.FNPL_PRNO)
+                                                  FROM NBMADMIN.TB_BMBND006 A, NBMADMIN.TB_BMBND001 B
+                                                  WHERE 1=1
+                                                      AND A.BOND_ADMN_NO = U.BOND_ADMN_NO
+                                            AND A.BOND_ADMN_NO = B.BOND_ADMN_NO
+                            ) )
+        GROUP BY U.BOND_ADMN_NO,(ACCU_FEE_AMT+PREV_SBAT+FIRE_BEFO_REAM+GUIN_SPAY_AMT+SEPR_FEE_SBAT+ETC_SBAT)     )C
+        ,(SELECT XX.BOND_ADMN_NO
+            ,MAX(XX.DLGS_SQNO) AS DLGS_SQNO
+            ,SUM(XX.RECV_PRCP) AS RECV_PRCP
+            ,XX.BOND_DLGS_KDCD AS BOND_DLGS_KDCD
+            ,XX.DLGS_DATE AS DLGS_DATE
+          FROM NBMADMIN.TB_BMBND040 XX
+           WHERE 1 = 1
+           AND XX.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+           AND XX.BOND_DLGS_KDCD(+) IN('10','20','25') /* 채권거래종류코드(수납) */ 
+           AND XX.FUND_DVCD(+) NOT IN('1','3','7','9') /*가수거래내역 제외. 반제만 집계대상*/
+          GROUP BY XX.BOND_ADMN_NO, XX.BOND_DLGS_KDCD, XX.DLGS_DATE
+         ) D  /* 미수채권상세거래내역 */  
+   WHERE 1=1
+      AND C.BOND_ADMN_NO = D.BOND_ADMN_NO(+)
+    ) h, NBMADMIN.TB_BMBND004 g /* 적용금리 */
+    WHERE 1=1
+    AND h.BOND_ADMN_NO = g.BOND_ADMN_NO(+)
+      AND h.DEBT_PRTR_SEQ = g.DEBT_PRTR_SEQ(+)
+      AND g.RGST_SQNO(+) = 2 ) i ) j
+<![CDATA[
+WHERE  j.DAYS1 > 0 
+]]>
+            UNION ALL
+            SELECT 
+           j.BOND_ADMN_NO AS BOND_ADMN_NO,
+           j.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+           j.BOND_SEQ AS BOND_SEQ, 
+           j.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+           j.INCC_STDT AS INCC_STDT, 
+           j.DLGS_SQNO AS DLGS_SQNO, 
+           j.DLGS_DATE AS DLGS_DATE, 
+           j.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+           j.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+           j.BF_DLGS_DATE AS BF_DLGS_DATE, 
+         j.AF_DLGS_DATE AS AF_DLGS_DATE,
+           j.RATO1 AS RATO1,
+         j.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+         j.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+         j.DAYS1 AS DAYS1,
+         j.Y_DAYS1 AS Y_DAYS1,
+         TRUNC((j.TRAF_BOND_BALN * (j.RATO1/100) * (j.DAYS1 / j.Y_DAYS1)),0) AS INCC1    
+FROM
+(
+SELECT 
+           i.BOND_ADMN_NO AS BOND_ADMN_NO,
+           i.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+           i.BOND_SEQ AS BOND_SEQ, 
+           i.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+           i.INCC_STDT AS INCC_STDT, 
+           i.DLGS_SQNO AS DLGS_SQNO, 
+           i.DLGS_DATE AS DLGS_DATE, 
+           i.TRAF_BOND_BALN AS TRAF_BOND_BALN,   
+           i.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+           i.BF_DLGS_DATE AS BF_DLGS_DATE, 
+       i.AF_DLGS_DATE AS AF_DLGS_DATE,
+         i.RATO1 AS RATO1,
+       i.BF_DLGS_DATE1 AS BF_DLGS_DATE1, 
+       i.AF_DLGS_DATE1 AS AF_DLGS_DATE1,
+<![CDATA[
+       (CASE WHEN i.RATO1 <> 0 THEN  (TO_NUMBER(TO_DATE(AF_DLGS_DATE1,'YYYYMMDD') - TO_DATE(BF_DLGS_DATE1,'YYYYMMDD'))+1) ELSE 0 END) AS DAYS1,
+]]>
+       365 AS Y_DAYS1
+FROM 
+(SELECT 
+           h.BOND_ADMN_NO AS BOND_ADMN_NO,
+           h.DEBT_PRTR_SEQ AS DEBT_PRTR_SEQ, 
+           h.BOND_SEQ AS BOND_SEQ, 
+           h.UCOL_BOND_AMT AS UCOL_BOND_AMT, 
+           h.INCC_STDT AS INCC_STDT, 
+           h.DLGS_SQNO AS DLGS_SQNO, 
+           h.DLGS_DATE AS DLGS_DATE, 
+           h.UCOL_BOND_BALN AS TRAF_BOND_BALN,   
+           h.BOND_DLGS_KDCD AS BOND_DLGS_KDCD,
+           h.BF_DLGS_DATE AS BF_DLGS_DATE, 
+       h.AF_DLGS_DATE AS AF_DLGS_DATE, 
+<![CDATA[
+           (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN 0 
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN NVL(g.APCN_RATO,0)
+             WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN 0 
+         ELSE 0 END) AS RATO1,
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.BF_DLGS_DATE <= g.APCN_STRT_DATE AND h.AF_DLGS_DATE >= g.APCN_STRT_DATE THEN APCN_STRT_DATE
+             WHEN h.BF_DLGS_DATE >= g.APCN_STRT_DATE AND h.BF_DLGS_DATE <= g.APCN_END_DATE THEN BF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS BF_DLGS_DATE1, 
+       (CASE WHEN h.AF_DLGS_DATE < g.APCN_STRT_DATE THEN ' '
+             WHEN h.AF_DLGS_DATE >= g.APCN_STRT_DATE AND h.AF_DLGS_DATE <= g.APCN_END_DATE THEN AF_DLGS_DATE
+         WHEN h.BF_DLGS_DATE <= g.APCN_END_DATE AND h.AF_DLGS_DATE >= g.APCN_END_DATE THEN APCN_END_DATE
+         WHEN h.BF_DLGS_DATE > g.APCN_END_DATE THEN ' ' ELSE '' END) AS AF_DLGS_DATE1
+]]>
+ FROM 
+     (SELECT
+      D.BOND_ADMN_NO, 1 AS DEBT_PRTR_SEQ, 1 AS BOND_SEQ, C.UCOL_BOND_AMT, D.RECV_PRCP,
+    (SELECT SUM(RECV_PRCP) 
+       FROM NBMADMIN.TB_BMBND040 E 
+    WHERE 1=1 
+      AND E.BOND_ADMN_NO = D.BOND_ADMN_NO
+      AND E.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND E.BOND_DLGS_KDCD(+) IN('10','20','25')
+          AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+<![CDATA[
+      AND E.DLGS_DATE <= D.DLGS_DATE
+]]>
+       ) AS DLGS_TOT, /* 누적수납금액 */
+    (CASE BOND_DLGS_KDCD WHEN '10' THEN C.UCOL_BOND_AMT ELSE C.UCOL_BOND_AMT - (SELECT SUM(RECV_PRCP) 
+       FROM NBMADMIN.TB_BMBND040 E 
+    WHERE 1=1 
+      AND E.BOND_ADMN_NO = D.BOND_ADMN_NO
+      AND E.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+          AND E.BOND_DLGS_KDCD(+) IN('10','20','25')
+          AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+<![CDATA[
+      AND E.DLGS_DATE <= D.DLGS_DATE
+]]>
+       ) END) AS UCOL_BOND_BALN,
+    D.DLGS_SQNO, d.BOND_DLGS_KDCD, 
+    C.INCC_STDT, /* 이자계산시작일자 */
+    (CASE D.BOND_DLGS_KDCD WHEN '10' THEN C.INCC_STDT ELSE D.DLGS_DATE END) AS DLGS_DATE,
+   (CASE D.BOND_DLGS_KDCD WHEN '10' THEN C.INCC_STDT ELSE TO_CHAR(TO_DATE(D.DLGS_DATE,'YYYYMMDD')+1,'YYYYMMDD') END) AS BF_DLGS_DATE, /* 이관거래 최초이자기산일, 수납거래 거래일자 */
+   (SELECT 
+    CASE BOND_DLGS_KDCD WHEN '10' THEN (SELECT NVL(TO_CHAR(MIN(TO_DATE(E.DLGS_DATE,'YYYYMMDD')),'YYYYMMDD'),TO_CHAR(SYSDATE,'YYYYMMDD'))
+                                          FROM NBMADMIN.TB_BMBND040 E  /* 미수채권상세거래내역 */
+                       WHERE 1=1
+                       AND D.BOND_ADMN_NO = E.BOND_ADMN_NO(+)
+                       AND E.BOND_DLGS_KDCD(+) IN('20','25')
+                       AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+                       AND E.DLGS_STCD(+) = '01' )
+    
+    ELSE (SELECT NVL(TO_CHAR(MIN(TO_DATE(E.DLGS_DATE,'YYYYMMDD')),'YYYYMMDD'),TO_CHAR(SYSDATE,'YYYYMMDD'))
+                                          FROM NBMADMIN.TB_BMBND040 E  /* 미수채권상세거래내역 */
+                       WHERE 1=1
+                       AND D.BOND_ADMN_NO = e.BOND_ADMN_NO(+)
+                    <![CDATA[
+                       AND D.DLGS_DATE < e.DLGS_DATE(+)
+                       AND E.BOND_DLGS_KDCD(+) IN('20','25')
+                    ]]>     
+                       AND E.FUND_DVCD(+) NOT IN('1','3','7','9')
+                       AND E.DLGS_STCD(+) = '01' ) END
+    FROM DUAL ) AS AF_DLGS_DATE /*  채권거래종류코드(수납) 다음 거래일자(없으면 오늘) */
+    FROM 
+         (SELECT U.BOND_ADMN_NO, MIN(OCCR_DATE) AS INCC_STDT, 
+          SUM(UCOL_BOND_AMT) - (ACCU_FEE_AMT+PREV_SBAT+FIRE_BEFO_REAM+GUIN_SPAY_AMT+SEPR_FEE_SBAT+ETC_SBAT) AS UCOL_BOND_AMT
+          FROM  NBMADMIN.TB_BMBND100 U
+          , NBMADMIN.TB_BMBND001 V
+        , NBMADMIN.TB_BMBND010 W
+      WHERE U.BOND_ADMN_NO IN (SELECT BOND_ADMN_NO
+                                             FROM NBMADMIN.TB_BMBND001  
+                                           WHERE 1=1
+                                             AND BOND_KIND_CODE = '10'
+                                                     AND BOND_STCD = '01'
+                            ) 
+               AND U.BOND_ADMN_NO = V.BOND_ADMN_NO
+         AND V.FNPL_PRNO = W.FNPL_PRNO
+         AND W.STDD_YM = (SELECT MAX(STDD_YM) FROM NBMADMIN.TB_BMBND010
+           WHERE FNPL_PRNO = (SELECT DISTINCT(B.FNPL_PRNO)
+                                FROM NBMADMIN.TB_BMBND006 A, NBMADMIN.TB_BMBND001 B
+                               WHERE 1=1
+                                 AND A.BOND_ADMN_NO = U.BOND_ADMN_NO
+                                 AND A.BOND_ADMN_NO = B.BOND_ADMN_NO
+                            ) )
+GROUP BY U.BOND_ADMN_NO,(ACCU_FEE_AMT+PREV_SBAT+FIRE_BEFO_REAM+GUIN_SPAY_AMT+SEPR_FEE_SBAT+ETC_SBAT)    
+)C, 
+        (SELECT XX.BOND_ADMN_NO
+            ,MAX(XX.DLGS_SQNO) AS DLGS_SQNO
+            ,SUM(XX.RECV_PRCP) AS RECV_PRCP
+            ,XX.BOND_DLGS_KDCD AS BOND_DLGS_KDCD
+            ,XX.DLGS_DATE AS DLGS_DATE
+          FROM NBMADMIN.TB_BMBND040 XX
+           WHERE 1 = 1
+           AND XX.DLGS_STCD(+) = '01' /* 거래상태코드 = '01.정상' */
+           AND XX.BOND_DLGS_KDCD(+) IN('10','20','25') /* 채권거래종류코드(수납) */ 
+           AND XX.FUND_DVCD(+) NOT IN('1','3','7','9') /*가수거래내역 제외. 반제만 집계대상*/
+          GROUP BY XX.BOND_ADMN_NO, XX.BOND_DLGS_KDCD, XX.DLGS_DATE
+         ) D  /* 미수채권상세거래내역 */
+   WHERE 1=1
+      AND C.BOND_ADMN_NO = D.BOND_ADMN_NO(+)
+    ) h, NBMADMIN.TB_BMBND004 g /* 적용금리 */
+    WHERE 1=1
+    AND h.BOND_ADMN_NO = g.BOND_ADMN_NO(+)
+      AND h.DEBT_PRTR_SEQ = g.DEBT_PRTR_SEQ(+)
+      AND g.RGST_SQNO(+) = 3 ) i ) j
+<![CDATA[
+WHERE  j.DAYS1 > 0 
+]]>
+) k 
+      GROUP BY k.BOND_ADMN_NO 
+) R, NBMADMIN.TB_BMBND001 S
+WHERE 1=1
+AND R.BOND_ADMN_NO = S.BOND_ADMN_NO
+AND S.BOND_KIND_CODE = '10') U
+WHERE 1=1 
+<![CDATA[
+    AND ROWNUM <= ((#{_page}+1) * #{_pagesize})
+    ]]>
+    ORDER BY U.BOND_ADMN_NO, U.BOND_SEQ, U.DEBT_PRTR_SEQ 
+  ) Z
+  WHERE Z.RNUM > (#{_page} * #{_pagesize})
+</select>
+
+<select id="RCRCP901L001B" parameterType="paramMap" resultMap="NBRCRCC101JVO2">
+/* 내용 : 가상계좌입금 일별수수료 ERP전송대상조회
+ *  조회기준 : INQR_DATE  (실제은행 입금처리일자=전표일자)
+ *             고객이 휴일이체시 실입금일은 익영업일
+ *             INQ_DATE가 PK는 아니지만 INQR_DATE 기준 데이타 UNIQUE
+ *  CMPY_RQST_YN 수수료지급요청여부를 ERP회계처리여부로 사용함..
+ * 매퍼명 : rcBatchmapper
+ * 작성자 : 1021794
+ * 호출서비스 :
+ * 최초등록일 : 2019.11.20
+*/
+SELECT
+     'TR614'                     AS DLGS_TYPE_CODE  --거래유형
+   , TO_CHAR(SYSDATE,'YYYYMMDD') AS SEND_DATE            --송신일자
+   , '0000000001'            AS FILE_SEQ            --파일일련번호
+   , #{EMPL_NO}              AS EMPL_NO           --파일생성자(로그인한 사번)
+   , #{ORGN_CODE}          AS ORGN_CODE      --부서코드(고객서비스관리TF)
+   , INQR_DATE                AS INQR_DATE        --발생일자(=전표일 가상계좌실입금일(영업일))
+   , '12'                          AS JOB_CODE         --잡코드(부서별잡코드)
+   , NVL(FINA_ORGN_CODE,'088')   AS FINA_ORGN_CODE  --은행코드
+   , LPAD(NORM_RECV_CNT,10,'0')  AS NORM_RECV_CNT    --청구당행(수수료입금건수)
+   , '0000000000'            AS OUT_CNT          --이체당행(출금건수)
+   , LPAD(0,15,'0')            AS CMSN_AMT      --금액(건별수수료집계로 무의미)
+   , #{TRST_FLAG}             AS TRST_FLAG       --처리플래그(10정상 20취소)
+FROM  TB_RCRCP901 A  /*가상계좌수수료전문*/
+WHERE 1=1
+AND   INQR_DATE      LIKE #{INQR_YM} || '%' /* 휴일등 입금신청시 당사계좌에 실제입금처리되는 일자 */
+AND   NORM_RECV_CNT > 0    /* 정상입금건수 */
+AND   CMPY_RQST_YN    = 'N'  /* 수수료전송안된데이타 */
+ORDER BY INQR_DATE
+
+</select>
+<update id="RCRCC302U001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC101JVO2">
+/* 내용 : 가상계좌입금수수료 ERP전송정보 변경
+     * 매퍼명 : rcBatchmapper.RCRCC302U001B
+     * 작성자 : 1021794
+     * 호출서비스 : NBRCRCC101J.xml
+     * 최초등록일 : 2019.11.20
+     * */
+     
+<![CDATA[     
+
+MERGE INTO NBMADMIN.TB_RCRCC302 A
+		USING DUAL
+		ON ( 	   A.TRNM_DATE =#{sendDate} /*전송일자*/
+			  AND  A.OCCR_DATE =#{inqrDate} /*발생일자*/
+			  )
+		WHEN MATCHED THEN
+		UPDATE SET
+		 A.DLNG_MAN_MPNO=#{mpno}	/*처리자사번*/
+		,A.DEPT_CD=#{orgnCode}				/*부서코드*/
+		,A.CNTT_TYPE='26'						/*계약유형*/
+		,A.DLNG_CNT = to_number(#{normRecvCnt})   /*처리건수*/
+		WHEN NOT MATCHED THEN
+		INSERT (
+					 A.TRNM_DATE
+					,A.SEQ_NO
+					,A.DLNG_MAN_MPNO
+					,A.DEPT_CD
+					,A.OCCR_DATE
+					,A.CNTT_TYPE
+					,A.DLNG_CNT
+					)
+		  VALUES (
+		  			#{sendDate}
+		  			,(SELECT to_char(NVL(MAX(TO_NUMBER(SEQ_NO)),0)+1) 
+			        FROM NBMADMIN.TB_RCRCC302
+			        WHERE TRNM_DATE =#{sendDate} )
+		  			,#{mpno}
+		  			,#{orgnCode}
+		  			,#{inqrDate}
+		  			,'26'
+		  			,to_number(#{normRecvCnt})
+		  )
+]]>
+</update>
+
+<update id="RCRCP901U001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC101JVO2">
+/* 내용 : 가상계좌입금수수료 ERP전송정보 변경
+     * 매퍼명 : rcBatchmapper.RCRCP901U001
+     * 작성자 : 1021794
+     * 호출서비스 : NBRCRCC101J.xml
+     * 최초등록일 : 2019.11.20
+     * */
+UPDATE NBMADMIN.TB_RCRCP901
+    SET
+       LAST_CHMN_MPNO = #{mpno}
+      ,PGM_ID                  = #{pgmId}
+      ,LAST_CHNG_DTTM   = SYSDATE            
+      ,CMSN_CNT             = #{normRecvCnt}
+      ,CMPY_RQST_YN       = #{cmpyRqstYn}
+WHERE INQR_DATE         = #{inqrDate}
+</update>
+<resultMap id="NBRCRCC101JVO2" type="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC101JVO2">
+<result property="pgmId" column="PGM_ID"/>
+
+<result property="dlgsTypeCode" column="DLGS_TYPE_CODE"/>
+<result property="sendDate" column="SEND_DATE"/>
+<result property="fileSeq" column="FILE_SEQ"/>
+<result property="emplNo" column="EMPL_NO"/>
+<result property="orgnCode" column="ORGN_CODE"/>
+<result property="inqrDate" column="INQR_DATE"/>
+<result property="jobCode" column="JOB_CODE"/>
+<result property="finaOrgnCode" column="FINA_ORGN_CODE"/>
+<result property="normRecvCnt" column="NORM_RECV_CNT"/>
+<result property="outCnt" column="OUT_CNT"/>
+<result property="cmsnAmt" column="CMSN_AMT"/>
+<result property="trstFlag" column="TRST_FLAG"/>
+<result property="mpno" column="MPNO"/>
+</resultMap>
+
+
+<select id="RCRCC300L003B" parameterType="paramMap" resultMap="NBRCRCC300JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회(취소)
+     * 매퍼명 : rcBatchMapper.RCRCC300L002B
+     * 작성자 : 1073301
+     * 호출서비스 : NBRCRCC102J
+     * 최종변경일 : 2019.09.18
+     * */
+  SELECT #{slipDate} AS SLIP_DATE /*거래유형코드_A01_5*/
+     from dual
+</select>
+
+<select id="RCRCC300L002B" parameterType="paramMap" resultMap="NBRCRCC100JVO">
+/* 내용 : 일마감 ERP 송신 대상 조회(취소)
+     * 매퍼명 : rcBatchMapper.RCRCC300L002B
+     * 작성자 : 1073301
+     * 호출서비스 : NBRCRCC102J
+     * 최종변경일 : 2019.09.18
+     * */
+  SELECT
+        DLGS_TYPE_CODE AS A01 /*거래유형코드_A01_5*/
+        ,'NB_미수채권' AS A02 /*원천시스템코드_A02_20*/
+        ,DLNG_DEPT_CODE AS A03 /*처리부서_A03_8*/
+        ,DLMN_MPNO AS A04 /*처리사원_A04_8*/
+        ,TO_CHAR(LAST_CHNG_DTTM, 'yyyyMMdd') AS A05 /*처리일자_A05_8*/
+        ,TO_CHAR(LAST_CHNG_DTTM, 'HH24mmSS') AS A06 /*처리시간_A06_6*/
+        ,TO_CHAR(SYSDATE, 'yyyyMMdd') AS A07 /*송신일자_A07_8*/
+        ,TO_CHAR(SYSDATE, 'HH24mmSS') AS A08 /*송신시간_A08_6*/
+        ,'' AS A09 /*그룹코드_A09_20*/
+        <choose>
+            <when test='dlgsTypeCode.equals("NB001")'>
+                ,DLMN_MPNO AS A10 /*사원코드_A10_8*/            
+            </when>
+            <when test='dlgsTypeCode.equals("NB001")'>
+                ,DLMN_MPNO AS A10 /*사원코드_A10_8*/            
+            </when>
+            <otherwise>
+                ,DLMN_MPNO AS A10 /*처리사원_A10_8*/
+            </otherwise>
+        </choose>    
+        <choose>
+            <when test='dlgsTypeCode.equals("NB008")'>
+               ,'' AS A11 /*증권번호_A11_14*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB008")'>
+               ,'' AS A11 /*증권번호_A11_14*/
+            </when>
+            <otherwise>
+               ,BOND_ADMN_NO AS A11 /*증권번호_A11_14*/
+            </otherwise>
+        </choose>            
+        ,TRRV_CNFM_KEY AS A12 /*송수신확인_A12_40*/
+        <choose>                
+            <when test='dlgsTypeCode.equals("NB005")'>
+          ,STDD_DATE AS A13 /*전표일자_A13_8 결산조정은 영업일 중 말일 기준일자로 들어옴 */
+          </when>
+            <otherwise>
+            ,SLIP_DATE AS A13 /*전표일자_A13_8*/
+            </otherwise>
+        </choose>             
+        ,EVID_DATE AS A14 /*증빙일자_A14_8*/
+        ,STDD_DATE AS A15 /*지급입금기준일자_A15_8*/
+        ,PAYM_METD_DVSN AS A16 /*지급입금방법구분_A16_1*/
+        ,'KRW' AS A17 /*통화_A17_5*/
+        ,PUBL_DPCD AS A18/*발행부서_A18_5*/
+        ,PRPO_DEPT_CODE AS A19 /*발의부서_A19_5*/
+        ,'000000' AS A20 /*폴더코드_A20_6*/
+        ,'A0000' AS A21 /*펀드코드_A21_5*/
+        ,'00000000' AS A22 /*상품분류_A22_8*/
+        ,'00000000' AS A23 /*임시_A23_8*/
+        ,'00000000000000' AS A24 /*임시_A24_14*/
+        ,NVL(ERP_DLPL_CODE, '') AS A25 /*거래처코드_A25_14*/
+        ,'2' AS A26 /*취소여부_A26_1 '1'정상,'2'취소*/
+        ,DLNG_STAT_CODE AS A27 /*처리상태_A27_3*/
+        ,BSNS_DVSN_CODE AS P01 /*업무구분_P01_3*/
+        ,RECV_METD_DVCD AS P02 /*수납방법_P02_2*/
+        ,BOND_KIND_CODE AS P03 /*채권종류_P03_1*/
+        <choose>
+            <when test='dlgsTypeCode.equals("NB001")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*미수금발생*/
+            ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*HA 수수료지급액*/
+            ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*FP 수수료지급액*/
+            ,DECODE(SIGN(DLGS_AMT4), -1, '-'||LPAD(ABS(DLGS_AMT4), 14, 0), LPAD(ABS(DLGS_AMT4), 15, 0)) AS D04 /*TRI 수수료지금액*/
+            ,DECODE(SIGN(DLGS_AMT5), -1, '-'||LPAD(ABS(DLGS_AMT5), 14, 0), LPAD(ABS(DLGS_AMT5), 15, 0)) AS D05 /*GFP 수수료지지급액*/
+            ,DECODE(SIGN(DLGS_AMT6), -1, '-'||LPAD(ABS(DLGS_AMT6), 14, 0), LPAD(ABS(DLGS_AMT6), 15, 0)) AS D06 /*AM 수수료지급액*/
+            ,DECODE(SIGN(DLGS_AMT7), -1, '-'||LPAD(ABS(DLGS_AMT7), 14, 0), LPAD(ABS(DLGS_AMT7), 15, 0)) AS D07 /*TCM 수수료지급액*/                
+            </when>
+            <when test='dlgsTypeCode.equals("NB002")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*보험해약금액*/
+            ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*원금 미수금_일반 충당*/
+            ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*원금 미수금_부당보험금 충당*/
+            ,DECODE(SIGN(DLGS_AMT4), -1, '-'||LPAD(ABS(DLGS_AMT4), 14, 0), LPAD(ABS(DLGS_AMT4), 15, 0)) AS D04 /*원금 잡이익_부당보험금 충당*/
+            ,DECODE(SIGN(DLGS_AMT5), -1, '-'||LPAD(ABS(DLGS_AMT5), 14, 0), LPAD(ABS(DLGS_AMT5), 15, 0)) AS D05 /*원금 상각금 충당*/
+            ,DECODE(SIGN(DLGS_AMT6), -1, '-'||LPAD(ABS(DLGS_AMT6), 14, 0), LPAD(ABS(DLGS_AMT6), 15, 0)) AS D06 /*이자 상환금 충당*/
+            ,DECODE(SIGN(DLGS_AMT7), -1, '-'||LPAD(ABS(DLGS_AMT7), 14, 0), LPAD(ABS(DLGS_AMT7), 15, 0)) AS D07 /*비용 상환금 충당*/
+            ,DECODE(SIGN(DLGS_AMT8), -1, '-'||LPAD(ABS(DLGS_AMT8), 14, 0), LPAD(ABS(DLGS_AMT8), 15, 0)) AS D08 /*공탁금 상환금 충당*/
+            ,DECODE(SIGN(DLGS_AMT9), -1, '-'||LPAD(ABS(DLGS_AMT9), 14, 0), LPAD(ABS(DLGS_AMT9), 15, 0)) AS D09 /*가수금 발생*/
+            ,DECODE(SIGN(DLGS_AMT10), -1, '-'||LPAD(ABS(DLGS_AMT10), 14, 0), LPAD(ABS(DLGS_AMT10), 15, 0)) AS D10 /*가수금 정리*/
+            ,DECODE(SIGN(DLGS_AMT), -1, '-'||LPAD(ABS(DLGS_AMT), 14, 0), LPAD(ABS(DLGS_AMT), 15, 0)) AS D11 /*원금 잡이익_HA 충당*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB003")'>
+          ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*실입금액*/
+          ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*원금 미수금_일반 충당*/
+          ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*원금 미수금_부당보험금 충당*/
+          ,DECODE(SIGN(DLGS_AMT4), -1, '-'||LPAD(ABS(DLGS_AMT4), 14, 0), LPAD(ABS(DLGS_AMT4), 15, 0)) AS D04 /*원금 미수금_부당보험금 충당*/
+          ,DECODE(SIGN(DLGS_AMT5), -1, '-'||LPAD(ABS(DLGS_AMT5), 14, 0), LPAD(ABS(DLGS_AMT5), 15, 0)) AS D05 /*원금 상각금 충당*/
+          ,DECODE(SIGN(DLGS_AMT6), -1, '-'||LPAD(ABS(DLGS_AMT6), 14, 0), LPAD(ABS(DLGS_AMT6), 15, 0)) AS D06 /*이자 상환금 충당*/
+          ,DECODE(SIGN(DLGS_AMT7), -1, '-'||LPAD(ABS(DLGS_AMT7), 14, 0), LPAD(ABS(DLGS_AMT7), 15, 0)) AS D07 /*비용 상환금 충당*/
+          ,DECODE(SIGN(DLGS_AMT8), -1, '-'||LPAD(ABS(DLGS_AMT8), 14, 0), LPAD(ABS(DLGS_AMT8), 15, 0)) AS D08 /*공탁금 상환금 충당*/
+          ,DECODE(SIGN(DLGS_AMT9), -1, '-'||LPAD(ABS(DLGS_AMT9), 14, 0), LPAD(ABS(DLGS_AMT9), 15, 0)) AS D09 /*가수금 발생*/
+          ,DECODE(SIGN(DLGS_AMT10), -1, '-'||LPAD(ABS(DLGS_AMT10), 14, 0), LPAD(ABS(DLGS_AMT10), 15, 0)) AS D10 /*가수금 정리*/  
+          ,DECODE(SIGN(DLGS_AMT), -1, '-'||LPAD(ABS(DLGS_AMT), 14, 0), LPAD(ABS(DLGS_AMT), 15, 0)) AS D11 /*원금 잡이익_HA 충당*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB004")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*충당금설정액*/
+            ,DECODE(SIGN(DLGS_AMT2), -1, '-'||LPAD(ABS(DLGS_AMT2), 14, 0), LPAD(ABS(DLGS_AMT2), 15, 0)) AS D02 /*미수금_일반 상각금액*/
+            ,DECODE(SIGN(DLGS_AMT3), -1, '-'||LPAD(ABS(DLGS_AMT3), 14, 0), LPAD(ABS(DLGS_AMT3), 15, 0)) AS D03 /*미수금_부당보험금 상각금액*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB005")'>
+            ,DECODE(SIGN(DLGS_AMT1), -1, '-'||LPAD(ABS(DLGS_AMT1), 14, 0), LPAD(ABS(DLGS_AMT1), 15, 0)) AS D01 /*충당금설정액*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB006")'>
+            ,DLGS_AMT1 AS D01 /*가수금 정리*/
+            ,DLGS_AMT2 AS D02 /*실송금액*/
+            ,DTAL_CT1  AS D03 /*증빙종류*/
+            ,DTAL_CT2  AS D04  /*적요*/
+            ,DTAL_CT3  AS D05 /*품의번호*/
+            </when>
+            <when test='dlgsTypeCode.equals("NB007")'>
+            ,DLGS_AMT1 AS D01 /*총지급액*/
+            ,DLGS_AMT2 AS D02 /*비용 발생금액*/
+            ,DLGS_AMT3 AS D03 /*공탁금 발생금액*/
+            ,DLGS_AMT4 AS D04 /*공급가액+세액*/
+            ,DTAL_CT1  AS D05 /*증빙종류*/
+            ,DTAL_CT2  AS D06  /*적요*/
+            ,DTAL_CT3  AS D07 /*품의번호*/     
+            </when>
+            <when test='dlgsTypeCode.equals("NB008")'>
+            ,DLGS_AMT1 AS D01 /*총지급액*/
+            ,DLGS_AMT2 AS D02 /*공급가액*/
+            ,DLGS_AMT3 AS D03 /*세액*/
+            --,'-'||LPAD(DLGS_AMT4, 14, 0) AS D04 /*공급가액+세액*/ 
+            ,DLGS_AMT4 AS D04 /*공급가액+세액*/
+            ,DTAL_CT1  AS D05 /*증빙종류*/
+            ,DTAL_CT2  AS D06  /*적요*/
+            ,DTAL_CT3  AS D07 /*품의번호*/     
+            </when>                                                                 
+            <otherwise>
+          ,DLGS_AMT1 AS D01
+          ,DLGS_AMT2 AS D02
+          ,DLGS_AMT3 AS D03
+          ,DLGS_AMT4 AS D04
+          ,DLGS_AMT5 AS D05
+          ,DLGS_AMT6 AS D06
+          ,DLGS_AMT7 AS D07
+          ,DLGS_AMT8 AS D08
+          ,DLGS_AMT9 AS D09
+          ,DLGS_AMT10 AS D10            
+          ,DLGS_AMT AS D11
+            </otherwise>
+        </choose>                 
+  FROM NBMADMIN.TB_RCRCC300
+  WHERE DLGS_TYPE_CODE = #{dlgsTypeCode}
+  AND SLIP_DATE = #{slipDate}
+</select>
+<update id="BMBND011U002B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC100JVO2">
+/* 내용 : 보증보험 수납금액 수정 
+     * 매퍼명 : rcBatchMapper.BMBND011U002B
+     * 작성자 : 1073301
+     * 호출서비스 : NBRCRCC100J
+     * 최종변경일 : 2019.09.18
+     * */
+     UPDATE NBMADMIN.TB_BMBND011 
+     SET
+     LAST_CHMN_MPNO ='BATCH'
+     ,PGM_ID = #{pgmId}
+     ,LAST_CHNG_DTTM = SYSDATE 
+     ,GUIN_RECV_AMT = GUIN_RECV_AMT - #{guinRecvAmt}     
+     WHERE FNPL_PRNO = #{fnplPrno} 
+     AND GUIN_POLY_NO = #{guinPolyNo}
+     AND GUIN_DVCD = #{guinDvcd}
+</update>
+<delete id="RCRCC300D001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC300JVO">
+/* 내용 : 수납내역 일마감확정 취소
+     * 매퍼명 : recvClogMapper.RCRCC300D001B
+     * 작성자 : 1073421
+     * 호출서비스 : RecvClogService.deleteDailyClosing
+     * 최종변경일 : 2019.09.23
+     * */ 
+     DELETE FROM NBMADMIN.TB_RCRCC300
+     WHERE SLIP_DATE = #{slipDate}
+</delete>
+<delete id="RCRCC200D001B" parameterType="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC300JVO">
+/* 내용 : 수납내역 일마감확정 취소
+     * 매퍼명 : rcBatchMapper.RCRCC200D001B
+     * 작성자 : 
+     * 호출서비스 : NBRCRCC102J
+     * 최종변경일 : 
+     * */ 
+     DELETE FROM NBMADMIN.TB_RCRCC200
+     WHERE 1=1
+     AND  SLIP_PRPO_DATE   = #{a13}
+     AND  SLIP_PRPO_DPCD  = #{a19}
+     AND  BOND_ADMN_NO = #{a11}
+     AND  DLGS_SQNO         = to_number(#{dlgsSqno})
+     AND  TRAN_TP_CD			= #{a01}
+</delete>
+<resultMap id="NBRCRCC300JVO" type="com.hanwhalife.nbm.batch.vo.rc.NBRCRCC300JVO"><result column="SLIP_DATE" property="slipDate"/>
+</resultMap>
+</mapper>
