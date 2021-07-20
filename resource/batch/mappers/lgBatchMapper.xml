@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="lgBatchMapper">
+
+
+
+<select id="BMBND001L001B" parameterType="paramMap" resultMap="NBLGLGA200JVO1">
+/* 내   용 : 알림톡대상 조회 
+ *        - 지급명령신청 예고안내 [ANB00016] : 지급명령/본안소송 미확정건으로 해촉 19개월차 월초발송
+ *        - 채무불이행자등재 예고안내 [ANB00018] : 지급명령/본안소송 확정건으로 확정일자 대비 7개월차 월초발송
+ *        - 지급명령신청 안내 [ANB0017] : 사건번호입력
+ *        - 채무불이행자등재 안내 [ANB0019] : 등재기일
+ *        - 채권(부동산)가압류집행 안내 [ANB0006] : 결정일자
+ *        - 금융질서문란자등재 안내 [ANB0007] : 등록일자
+ * 매퍼명 : lgBatchMapper.BMBND001L001B
+ * 작성자 : 1073300
+ * 최종변경일 : 2019.10.08
+ * */
+SELECT 'ANB00016'                  AS ALTK_TMPL_CODE  --알림톡템플릿코드:지급명령신청 예고안내 [ANB00016] : 지급명령/본안소송 미확정건으로 해촉 19개월차 월초발송
+     , B3.BOND_ADMN_NO             AS BOND_ADMN_NO    --채권관리번호 
+     , B3.DEBT_PRTR_SEQ            AS DEBT_PRTR_SEQ   --채무관계자순번
+     , B5.CUST_ID                  AS CUST_ID         --고객ID
+     , B5.CUST_NAME                AS CUST_NAME       --고객명 
+     , B5.CUST_CNNO                AS CUST_CNNO       --고객전화번호
+     , B1.BOND_KIND_CODE           AS BOND_KIND_CODE  --채권종류코드
+     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+           WHERE X.CODE_GRP = 'BOND_KIND_CODE' AND X.CODE_VAL = B1.BOND_KIND_CODE
+       ),'') AS BOND_KIND_NAME -- 채권종류코드명 
+     , Y.ETRS_DATE                 AS ETRS_DATE       --위촉일자
+     , Y.FIRE_DATE                 AS FIRE_DATE       --해촉일자
+     , B6.CHGM_MPNO                AS EMPL_NO         --담당자사번
+     , B7.EMPL_NAME                AS EMPL_NAME       --담당자명
+     , B7.TEL_NO                   AS TEL_NO          --담당자연락처  
+     , B6.CHRG_ORGN_CODE           AS ORGN_CODE       --담당기관코드
+     , B8.ORGN_NAME                AS ORGN_NAME       --담당기관명
+  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본      */
+     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+     , NBMADMIN.TB_CMORG002 B7 /* 사원기본           */
+     , NBMADMIN.TB_CMORG001 B8 /* 기관기본           */
+     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+     , NBMADMIN.TB_BMBND100 X  /* 미수채권상세      */
+     , NBMADMIN.TB_BMBND010 Y  /* 환수수수료기본   */
+     , (
+		/*법조치 본안소송/지급명령건 확정일자등 확인*/
+		SELECT B.BOND_ADMN_NO   
+		     , A.DCSN_DT     /*결정일자*/
+		     , A.DCSN_DATE   /*확정일자*/
+		     , A.RCOD_DDAT   /*등재기일*/
+		     , A.CLST_DDAT   /*명시기일*/
+		     , A.JDAF_END_DT /*법무종결일자*/
+		     , A.LAWS_PRPO_DATE /*소제기일자*/
+		  FROM NBMADMIN.TB_LGLGA008 A
+		     , NBMADMIN.TB_LGPPS004 B
+		 WHERE A.JDAF_RTNO      = B.JDAF_RTNO
+		   AND A.JDAF_RQST_DVCD =   '20'       /*지급소송*/
+		   AND A.JDAF_DTAL_DVCD IN ('21','22') /*본안소송,지급명령*/     
+		)          Z  /* 법무처리 */
+ WHERE B1.BOND_STCD      = '01'               /* 채권상태코드   */ 
+   AND B1.BOND_KIND_CODE = '10'               /* 채권종류코드 10-환수수수료 */
+   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO   
+   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO    /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ   /* 채무관계자순번 */
+   AND B3.CUST_ID        = B5.CUST_ID         /* 고객ID     */
+   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO   
+   AND B6.CHGM_MPNO      = B7.EMPL_NO         /* 담당자사번 : 사원번호 */
+   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE       /* 기관코드       */
+   AND B4.BOND_ADMN_NO   =  X.BOND_ADMN_NO    /* 채권관리번호   */
+   AND B4.BOND_SEQ       =  X.BOND_SEQ        /* 채권순번       */
+   AND B5.CUST_CNNO      IS NOT NULL
+   <![CDATA[   
+   AND SUBSTR(Y.FIRE_DATE,1,6) <= TO_CHAR(ADD_MONTHS(TO_DATE(#{stddYd},'YYYYMMDD'),-18),'YYYYMM') /*해촉 18개월 이후*/
+   ]]>
+   AND Y.STDD_YM         = SUBSTR(#{stddYd},1,6)
+   AND B1.FNPL_PRNO      =  Y.FNPL_PRNO
+   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO    /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ   /* 채무관계자순번 */
+   AND B9.SEND_METD_DVCD = '5'                /* 발송방법구분코드 5-알림톡 */
+   AND B9.SEND_DATE      IS  NULL             /* 미발송건 */               
+   AND B1.BOND_ADMN_NO   =  Z.BOND_ADMN_NO(+) /* 채권관리번호   */
+   AND ( Z.DCSN_DATE(+)    IS  NULL OR Z.DCSN_DATE(+) = ' ' )    /*미확정*/
+
+UNION ALL
+
+SELECT 'ANB00018'             AS ALTK_TMPL_CODE  --알림톡템플릿코드:채무불이행자등재 예고안내 [ANB00018] : 지급명령/본안소송 확정건으로 확정일자 대비 7개월차 월초발송
+     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO 
+     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+     , B5.CUST_ID             AS CUST_ID         --고객ID
+     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+     , B5.CUST_CNNO           AS CUST_CNNO       --고객전화번호
+     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+           WHERE X.CODE_GRP = 'BOND_KIND_CODE' AND X.CODE_VAL = B1.BOND_KIND_CODE
+       ),'')                  AS BOND_KIND_NAME -- 채권종류코드명 
+     , ''                     AS ETRS_DATE       --위촉일자
+     , ''                     AS FIRE_DATE       --해촉일자
+     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+     , B7.TEL_NO              AS TEL_NO          --담당자연락처
+     , B6.CHRG_ORGN_CODE      AS ORGN_CODE       --담당기관코드
+     , B8.ORGN_NAME           AS ORGN_NAME       --담당기관명
+  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+     , NBMADMIN.TB_CMORG002 B7 /* 사원기본         */
+     , NBMADMIN.TB_CMORG001 B8 /* 기관기본         */ 
+     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+     , (/*법조치 본안소송/지급명령건 확정일자등 확인*/
+        SELECT B.BOND_ADMN_NO   
+             , A.DCSN_DT     /*결정일자*/
+             , A.DCSN_DATE   /*확정일자*/
+             , A.RCOD_DDAT   /*등재기일*/
+             , A.CLST_DDAT   /*명시기일*/
+             , A.JDAF_END_DT /*법무종결일자*/
+             , A.LAWS_PRPO_DATE /*소제기일자*/
+          FROM NBMADMIN.TB_LGLGA008 A
+             , NBMADMIN.TB_LGPPS004 B
+         WHERE A.JDAF_RTNO      = B.JDAF_RTNO
+           AND A.JDAF_RQST_DVCD =   '20'       /*지급소송*/
+           AND A.JDAF_DTAL_DVCD IN ('21','22') /*본안소송,지급명령*/     
+       ) X  /* 법무처리 */
+ WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+   AND B1.BOND_KIND_CODE = '10'              /* 채권종류코드 10-환수수수료 */ 
+   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID         */
+   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B9.SEND_METD_DVCD = '5'               /* 발송방법구분코드 5-알림톡 */
+   AND B9.SEND_DATE      IS     NULL         /* 미발송건 */
+   AND B1.BOND_ADMN_NO   =  X.BOND_ADMN_NO   /* 채권관리번호   */
+   AND X.DCSN_DATE       IS NOT NULL
+   AND X.DCSN_DATE      != ' '
+   AND TO_CHAR(ADD_MONTHS(TO_DATE(X.DCSN_DATE,'YYYYMMDD'),7),'YYYYMM') = SUBSTR(#{stddYd},1,6)
+
+UNION ALL
+
+SELECT 'ANB00017'             AS ALTK_TMPL_CODE  --알림톡템플릿코드 : 지급명령신청 안내 [ANB0017] : 사건번호입력시
+     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO    --
+     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+     , B5.CUST_ID             AS CUST_ID         --고객ID
+     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+     , B5.CUST_CNNO           AS CUST_CNNO       --고객전화번호
+     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+           WHERE X.CODE_GRP = 'BOND_KIND_CODE' AND X.CODE_VAL = B1.BOND_KIND_CODE
+       ),'')                  AS BOND_KIND_NAME -- 채권종류코드명      
+     , ''                     AS ETRS_DATE       --위촉일자
+     , ''                     AS FIRE_DATE       --해촉일자
+     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+     , B7.TEL_NO              AS TEL_NO          --담당자연락처
+     , B6.CHRG_ORGN_CODE      AS ORGN_CODE       --담당기관코드
+     , B8.ORGN_NAME           AS ORGN_NAME       --담당기관명
+  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+     , NBMADMIN.TB_CMORG002 B7 /* 사원기본         */
+     , NBMADMIN.TB_CMORG001 B8 /* 기관기본         */ 
+     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+     , (/*법조치 본안소송/지급명령건 확정일자등 확인*/
+        SELECT B.BOND_ADMN_NO   
+             , A.RQST_DATE       /*신청일자*/
+             , A.JDAF_RQST_DVCD  /*법무신청구분코드*/
+             , A.JDAF_DTAL_DVCD  /*법무상세구분코드*/
+             , A.DCSN_DT         /*결정일자*/
+             , A.DCSN_DATE       /*확정일자*/
+             , A.RCOD_DDAT       /*등재기일*/
+             , A.CLST_DDAT       /*명시기일*/
+             , A.JDAF_END_DT     /*법무종결일자*/
+             , A.LAWS_PRPO_DATE  /*소제기일자*/
+             , A.MATT_NO_YEAR || A.MTNO_CD || A.MATT_NO_SQNO AS MATT_NO /* 사건번호 */
+             , DECODE(A.MTNO_CD,'','',
+               A.MATT_NO_YEAR || NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X
+                                       WHERE X.CODE_GRP = 'MTNO_CD' AND X.CODE_VAL = A.MTNO_CD),'')
+                              || A.MATT_NO_SQNO) AS MATT_NM /* 사건번호명  */
+          FROM NBMADMIN.TB_LGLGA008 A
+             , NBMADMIN.TB_LGPPS004 B
+         WHERE A.JDAF_RTNO      = B.JDAF_RTNO
+        ) X  /* 법무처리 */
+ WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+   AND B1.BOND_KIND_CODE = '10'              /* 채권종류코드 10-환수수수료 */ 
+   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID         */
+   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B9.SEND_METD_DVCD = '5'               /* 발송방법구분코드 5-알림톡 */
+   AND B9.SEND_DATE      IS      NULL        /* 미발송건 */
+   AND B1.BOND_ADMN_NO   =  X.BOND_ADMN_NO   /* 채권관리번호   */
+   AND X.JDAF_RQST_DVCD  =   '20'            /*지급소송*/
+   AND X.JDAF_DTAL_DVCD  IN ('21','22')      /*본안소송,지급명령*/     
+   AND X.MATT_NM         IS  NOT NULL        /*사건번호입력시*/ 
+
+UNION ALL
+
+SELECT 'ANB00019'             AS ALTK_TMPL_CODE  --알림톡템플릿코드 : 채무불이행자등재 안내 [ANB0019] : 등재기일 
+     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO    --
+     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+     , B5.CUST_ID             AS CUST_ID         --고객ID
+     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+     , B5.CUST_CNNO           AS CUST_CNNO       --고객전화번호
+     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+           WHERE X.CODE_GRP = 'BOND_KIND_CODE' AND X.CODE_VAL = B1.BOND_KIND_CODE
+       ),'')                  AS BOND_KIND_NAME -- 채권종류코드명 
+     , ''                     AS ETRS_DATE       --위촉일자
+     , ''                     AS FIRE_DATE       --해촉일자
+     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+     , B7.TEL_NO              AS TEL_NO          --담당자연락처
+     , B6.CHRG_ORGN_CODE      AS ORGN_CODE       --담당기관코드
+     , B8.ORGN_NAME           AS ORGN_NAME       --담당기관명
+  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+     , NBMADMIN.TB_CMORG002 B7 /* 사원기본         */
+     , NBMADMIN.TB_CMORG001 B8 /* 기관기본         */ 
+     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+     , (/*법조치 본안소송/지급명령건 확정일자등 확인*/
+        SELECT B.BOND_ADMN_NO   
+             , A.RQST_DATE       /*신청일자*/
+             , A.JDAF_RQST_DVCD  /*법무신청구분코드*/
+             , A.JDAF_DTAL_DVCD  /*법무상세구분코드*/
+             , A.DCSN_DT         /*결정일자*/
+             , A.DCSN_DATE       /*확정일자*/
+             , A.RCOD_DDAT       /*등재기일*/
+             , A.CLST_DDAT       /*명시기일*/
+             , A.JDAF_END_DT     /*법무종결일자*/
+             , A.LAWS_PRPO_DATE  /*소제기일자*/
+             , A.MATT_NO_YEAR || A.MTNO_CD || A.MATT_NO_SQNO AS MATT_NO /* 사건번호 */
+             , DECODE(A.MTNO_CD,'','',
+               A.MATT_NO_YEAR || NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X
+                                       WHERE X.CODE_GRP = 'MTNO_CD' AND X.CODE_VAL = A.MTNO_CD),'')
+                              || A.MATT_NO_SQNO) AS MATT_NM /* 사건번호명  */
+          FROM NBMADMIN.TB_LGLGA008 A
+             , NBMADMIN.TB_LGPPS004 B
+         WHERE A.JDAF_RTNO      = B.JDAF_RTNO
+        ) X  /* 법무처리 */
+ WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+   AND B1.BOND_KIND_CODE = '10'              /* 채권종류코드 10-환수수수료 */ 
+   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID         */
+   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B9.SEND_METD_DVCD = '5'               /* 발송방법구분코드 5-알림톡 */
+   AND B9.SEND_DATE      IS      NULL        /* 미발송건 */
+   AND B1.BOND_ADMN_NO   =  X.BOND_ADMN_NO   /* 채권관리번호   */
+   AND X.JDAF_RQST_DVCD  =   '50'            /*기타*/
+   AND X.JDAF_DTAL_DVCD  IN ('52')           /*채무불이행*/     
+   AND X.RCOD_DDAT       IS  NOT NULL        /*등재기일 입력시 */
+
+UNION ALL
+
+SELECT 'ANB00006'             AS ALTK_TMPL_CODE  --알림톡템플릿코드 : 채권(부동산)가압류집행 안내 [ANB0006] : 결정일자
+     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO    --
+     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+     , B5.CUST_ID             AS CUST_ID         --고객ID
+     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+     , B5.CUST_CNNO           AS CUST_CNNO       --고객전화번호
+     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+           WHERE X.CODE_GRP = 'BOND_KIND_CODE' AND X.CODE_VAL = B1.BOND_KIND_CODE
+       ),'')                  AS BOND_KIND_NAME -- 채권종류코드명 
+     , ''                     AS ETRS_DATE       --위촉일자
+     , ''                     AS FIRE_DATE       --해촉일자
+     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+     , B7.TEL_NO              AS TEL_NO          --담당자연락처
+     , B6.CHRG_ORGN_CODE      AS ORGN_CODE       --담당기관코드
+     , B8.ORGN_NAME           AS ORGN_NAME       --담당기관명
+  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+     , NBMADMIN.TB_CMORG002 B7 /* 사원기본         */
+     , NBMADMIN.TB_CMORG001 B8 /* 기관기본         */ 
+     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+     , (/*법조치 본안소송/지급명령건 확정일자등 확인*/
+        SELECT B.BOND_ADMN_NO   
+             , A.RQST_DATE       /*신청일자*/
+             , A.JDAF_RQST_DVCD  /*법무신청구분코드*/
+             , A.JDAF_DTAL_DVCD  /*법무상세구분코드*/
+             , A.DCSN_DT         /*결정일자*/
+             , A.DCSN_DATE       /*확정일자*/
+             , A.RCOD_DDAT       /*등재기일*/
+             , A.CLST_DDAT       /*명시기일*/
+             , A.JDAF_END_DT     /*법무종결일자*/
+             , A.LAWS_PRPO_DATE  /*소제기일자*/
+             , A.MATT_NO_YEAR || A.MTNO_CD || A.MATT_NO_SQNO AS MATT_NO /* 사건번호 */
+             , DECODE(A.MTNO_CD,'','',
+               A.MATT_NO_YEAR || NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X
+                                       WHERE X.CODE_GRP = 'MTNO_CD' AND X.CODE_VAL = A.MTNO_CD),'')
+                              || A.MATT_NO_SQNO) AS MATT_NM /* 사건번호명  */
+          FROM NBMADMIN.TB_LGLGA008 A
+             , NBMADMIN.TB_LGPPS004 B
+         WHERE A.JDAF_RTNO      = B.JDAF_RTNO
+        ) X  /* 법무처리 */
+ WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+   AND B1.BOND_KIND_CODE = '10'              /* 채권종류코드 10-환수수수료 */ 
+   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID         */
+   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B9.SEND_METD_DVCD = '5'               /* 발송방법구분코드 5-알림톡 */
+   AND B9.SEND_DATE      IS      NULL        /* 미발송건 */
+   AND B1.BOND_ADMN_NO   =  X.BOND_ADMN_NO   /* 채권관리번호   */
+   AND X.JDAF_RQST_DVCD  =   '10'            /* 보전 */
+   AND X.JDAF_DTAL_DVCD  IN ('11','12')      /* 채권가압류, 부동산가압류 */     
+   AND X.DCSN_DT         IS  NOT NULL        /* 결정일자 입력시 */
+
+UNION ALL
+
+SELECT 'ANB00007'             AS ALTK_TMPL_CODE  --알림톡템플릿코드 : 금융질서문란자 등재 안내 [ANB0007] : 등록일자
+     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO    --
+     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+     , B5.CUST_ID             AS CUST_ID         --고객ID
+     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+     , B5.CUST_CNNO           AS CUST_CNNO       --고객전화번호
+     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+           WHERE X.CODE_GRP = 'BOND_KIND_CODE' AND X.CODE_VAL = B1.BOND_KIND_CODE
+       ),'')                  AS BOND_KIND_NAME  --채권종류코드명 
+     , (SELECT TO_CHAR(TO_DATE(MIN(B0.OCCR_DATE),'YYYYMMDD'),'YYYY"년 "MM"월 "DD"일"')
+          FROM NBMADMIN.TB_BMBND100 B0 /* 미수채권상세 */
+         WHERE B0.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+           AND B0.BOND_SEQ       = B4.BOND_SEQ       /* 채무관계자순번 */
+       )                      AS ETRS_DATE --위촉일자=> 지급일자로 사용
+     , ''                     AS FIRE_DATE       --해촉일자
+     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+     , B7.TEL_NO              AS TEL_NO          --담당자연락처
+     , B6.CHRG_ORGN_CODE      AS ORGN_CODE       --담당기관코드
+     , B8.ORGN_NAME           AS ORGN_NAME       --담당기관명
+  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+     , NBMADMIN.TB_BMBND400 B2 /* 한국신용정보원집중기본 */
+     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+     , NBMADMIN.TB_CMORG002 B7 /* 사원기본         */
+     , NBMADMIN.TB_CMORG001 B8 /* 기관기본         */ 
+     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */     
+ WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+   AND B1.BOND_KIND_CODE = '20'              /* 채권종류코드 20-편취보험금 */ 
+   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID         */
+   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B9.SEND_METD_DVCD = '5'               /* 발송방법구분코드 5-알림톡 */
+   AND B9.SEND_DATE      IS      NULL
+   AND B1.BOND_ADMN_NO   = B2.BOND_ADMN_NO   /* 채권관리번호   */
+   AND B3.DEBT_PRTR_SEQ  = B2.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+   AND B2.RPRT_DATE      IS  NOT NULL        /* 등록일자=보고일자 */
+
+   
+</select>
+<resultMap id="NBLGLGA200JVO1" type="com.hanwhalife.nbm.batch.vo.lg.NBLGLGA200JVO1">
+<result property="altkTmplCode" column="ALTK_TMPL_CODE"  />
+<result property="bondAdmnNo"   column="BOND_ADMN_NO"    />
+<result property="debtPrtrSeq"  column="DEBT_PRTR_SEQ"   />
+<result property="custId"       column="CUST_ID"         />
+<result property="custName"     column="CUST_NAME"       />
+<result property="custCnno"     column="CUST_CNNO"       />
+<result property="bondKindCode" column="BOND_KIND_CODE"  />
+<result property="bondKindName" column="BOND_KIND_NAME"  />
+<result property="etrsDate"     column="ETRS_DATE"       />
+<result property="fireDate"     column="FIRE_DATE"       />
+<result property="emplNo"       column="EMPL_NO"         />
+<result property="emplName"     column="EMPL_NAME"       />
+<result property="telNo"        column="TEL_NO"          />
+<result property="orgnCode"     column="ORGN_CODE"       />
+<result property="orgnName"     column="ORGN_NAME"       />
+<result property="altkTmplName" column="ALTK_TMPL_NAME"  />
+<result property="msgCont"      column="MSG_CONT"        />
+<result property="mpno"         column="MPNO"            />
+<result property="pgmId"        column="PGM_ID"          />
+</resultMap>
+
+
+<insert id="BMBND410I001" parameterType="paramMap">
+/* 내용 : 채무관계자발송내역 알림톡 등록
+ * 매퍼명 : bmBatchMapper.BMBND410I001
+ * 작성자 : 1073440
+ * 최종변경일 : 2019.10.10
+ */
+INSERT INTO NBMADMIN.TB_BMBND410    /* 채무관계자발송내역 */
+(
+       BOND_ADMN_NO      /* 채권관리번호           */
+     , DEBT_PRTR_SEQ     /* 채무관계자순번         */
+     , SEND_SEQ_NO       /* 발송일련번호           */
+     , LAST_CHMN_MPNO    /* 최종변경자사번         */
+     , LAST_CHNG_DTTM    /* 최종변경일시           */
+     , PGM_ID            /* 프로그램ID      */
+     , FRST_RGTR_MPNO    /* 최초등록자사번         */
+     , FRST_RGST_DTTM    /* 최초등록일시           */
+     , SEND_METD_DVCD    /* 발송방법구분코드       */
+     , BDAM_NTLT_KDCD    /* 채권관리안내장종류코드 */
+     , CUST_ID           /* 고객ID         */
+     , RQST_DATE         /* 신청일자               */
+     , SEND_DATE         /* 발송일자               */
+     , SEND_ZPNO         /* 발송우편번호           */
+     , SEND_ADDR         /* 발송주소               */
+     , SEND_DTAL_ADDR    /* 발송상세주소           */
+     , SENR_NAME         /* 발송자명               */
+     , ADDR_DVCD         /* 주소구분코드           */
+     , CUST_ZPNO         /* 고객우편번호           */
+     , CUST_ADDR         /* 고객주소               */
+     , CUST_DTAL_ADDR    /* 고객상세주소           */
+     , RCPT_NAME         /* 수신자명               */
+     , CHGM_CNTA_NO      /* 담당자연락번호         */
+     , CUST_CNNO         /* 고객연락처             */
+     , SEND_CTEN         /* 발송내용               */
+     , TRNM_STAT_CODE    /* 전송상태코드           */
+     , TRNM_RTCD         /* 전송결과코드           */
+     , TRNM_ERCD         /* 전송오류코드           */
+     , RETN_YN           /* 반송여부               */
+     , RETN_DATE         /* 반송일자               */
+     , MAIL_RETN_RSCD    /* 우편물반송사유코드  */
+     , DLGS_ORGN_ID      /* 거래기관ID      */
+     , TRDR_MPNO         /* 거래자사번             */
+     , LAST_TRNM_DTTM    /* 최종전송일시           */
+     , BAR_CODE_NO       /* 바코드번호 */
+     , DELR_DT           /* 배달일자       */
+     , DELR_RTCD         /* 배달결과코드   */
+     , REVR_NAME         /* 수령인명       */
+     , REVR_RLCD         /* 수령인관계코드 */
+     , RGML_RGST_NO      /* 등기우편번호   */
+)
+SELECT 
+       #{bondAdmnNo}      /* 채권관리번호           */
+     , #{debtPrtrSeq}     /* 채무관계자순번         */
+     , NVL(MAX(SEND_SEQ_NO),0) + 1 AS SEND_SEQ_NO /* 발송일련번호           */
+     , #{mpno}            /* 최종변경자사번         */
+     , SYSDATE            /* 최종변경일시           */
+     , #{pgmId}           /* 프로그램ID      */
+     , #{mpno}            /* 최초등록자사번         */
+     , SYSDATE            /* 최초등록일시           */
+     , '5'                /* 발송방법구분코드=5(알림톡) */
+     , '00'               /* 채권관리안내장종류코드 */
+     , #{custId}          /* 고객ID         */
+     , TO_CHAR(SYSDATE,'YYYYMMDD')        /* 신청일자               */
+     , TO_CHAR(SYSDATE,'YYYYMMDD')        /* 발송일자               */
+     , ''                 /* 발송우편번호          */
+     , ''                 /* 발송주소               */
+     , ''                 /* 발송상세주소          */
+     , #{emplName}        /* 발송자명               */
+     , '00'               /* 주소구분코드           */
+     , '0'                 /* 고객우편번호           */
+     , ''                 /* 고객주소               */
+     , ''                 /* 고객상세주소           */
+     , #{custName}        /* 수신자명               */
+     , #{telNoEnc}           /* 담당자연락번호         */
+     , #{custCnnoEnc}      /* 고객연락처             */
+     , #{msgCont}           /* 발송내용  */
+     , #{trnmStatCode}    /* 전송상태코드           */
+     , #{trnmRtcd}        /* 전송결과코드           */
+     , #{trnmErcd}        /* 전송오류코드           */
+     , 'N'                /* 반송여부               */
+     , ''                 /* 반송일자               */
+     , '00'               /* 우편물반송사유코드  */
+     , ''                 /* 거래기관ID      */
+     , ''                 /* 거래자사번             */
+     , ''                 /* 최종전송일시           */
+     , ''                 /* 바코드번호     */
+     , ''                 /* 배달일자       */
+     , ''                 /* 배달결과코드   */
+     , ''                 /* 수령인명       */
+     , ''                 /* 수령인관계코드 */
+     , ''                 /* 등기우편번호   */
+  FROM NBMADMIN.TB_BMBND410    /* 채무관계자발송내역 */
+ WHERE BOND_ADMN_NO  = #{bondAdmnNo} 
+   AND DEBT_PRTR_SEQ = #{debtPrtrSeq}
+</insert>
+
+
+
+
+
+
+
+
+<select id="LGLGA008L001B" parameterType="paramMap" resultMap="NBLGLGA100JVO1">
+/* 내   용 : 안내장 대상 조회  
+        - 금융질서문란자 등록예정 통지 [NOTI0003] 
+ * 매퍼명 : lgBatchMapper.LGLGA008L001B
+ * 작성자 : 1073300
+ * 최종변경일 : 2019.10.10
+ */
+SELECT A.NOTI_TMPL_CODE  --알림톡템플릿코드 : 금융질서문란자 등재 안내 [NB03]
+     , REPLACE('10115'||'109'||'03'||#{stddYd}||TO_CHAR(ROWNUM,'000000000'),' ','') AS BAR_CODE_NO    /* 회사코드(5)+업무코드(3)+안내장종류(2)+안내장발행기준일자(8)+일련번호(9) */
+     , A.BOND_ADMN_NO    --
+     , A.DEBT_PRTR_SEQ   --채무관계자순번
+     , A.POLY_NO         --증권번호
+     , A.CUST_ID         --고객ID
+     , A.CUST_NAME       --고객명 
+     , A.CUST_CNNO       --고객전화번호
+     , A.CUST_ZPNO       --고객우편번호
+     , A.CUST_ADDR       --고객주소
+     , A.CUST_DTAL_ADDR  --고객상세주소
+     , A.BOND_KIND_CODE  --채권종류코드
+     , A.BOND_KIND_NAME  --채권종류코드명 
+     , A.JRDT_CURT_NAME  --관할법원코드명
+     , A.MATT_NM         --사건번호명 
+     , A.DCSN_DATE       --확정일자
+     , A.DEBT_REPY_DT    --채무변제일자=민사확정일자     
+     , A.UCOL_BOND_BALN  --채권잔액
+     , A.EMPL_NO         --담당자사번
+     , A.EMPL_NAME       --담당자명
+     , A.TEL_NO          --담당자연락처
+     , A.CHRG_ORGN_CODE  --담당기관코드
+     , A.CHRG_ORGN_NAME  --담당기관명
+     , A.IMAG_ACCT_NO    --가상계좌번호
+ FROM (
+		SELECT 'NB03'                 AS NOTI_TMPL_CODE  --알림톡템플릿코드 : 금융질서문란자 등재 안내 [NB03]
+		     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO    --
+		     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+		     , MAX(X.POLY_NO)         AS POLY_NO         --증권번호
+		     , B5.CUST_ID             AS CUST_ID         --고객ID
+		     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+		     , DECODE(B5.CUST_CNNO,'','', ' ','', REGEXP_REPLACE(B5.CUST_CNNO,'(02|.{3})(.+)(.{4})','\1-\2-\3')) AS CUST_CNNO       --고객전화번호
+             , CASE WHEN LENGTH(REPLACE(B5.ZIP_NO_1||B5.ZIP_NO_2,' ','')) = 6 
+                    THEN LPAD  (REPLACE(B5.ZIP_NO_1||B5.ZIP_NO_2,' ',''),6,'0')
+                    ELSE LPAD  (REPLACE(B5.ZIP_NO_1||B5.ZIP_NO_2,' ',''),5,'0') 
+                    END  AS CUST_ZPNO     --고객우편번호
+		     , B5.CUST_ADDR           AS CUST_ADDR       --고객주소
+		     , B5.CUST_DTAL_ADDR      AS CUST_DTAL_ADDR  --고객상세주소
+		     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+		     , '편취보험금'              AS BOND_KIND_NAME  --채권종류코드명 
+			 , Z.JRDT_CURT_NAME       AS JRDT_CURT_NAME  --관할법원코드명
+			 , Z.MATT_NM              AS MATT_NM         --사건번호명 
+			 , Z.DCSN_DATE            AS DCSN_DATE       --확정일자
+			 , DECODE(B1.CVCS_DCSN_DT,'','', ' ','', REGEXP_REPLACE(B1.CVCS_DCSN_DT,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS DEBT_REPY_DT    --채무변제일자=민사확정일자	 
+			 , TO_CHAR(SUM(X.UCOL_BOND_BALN), '99,999,999,999')   AS UCOL_BOND_BALN  --채권잔액
+		     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+		     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+		     --, DECODE(B7.TEL_NO ,'','', ' ','', REGEXP_REPLACE(B7.TEL_NO,'(02|.{3})(.+)(.{4})','\1-\2-\3')) AS TEL_NO          --담당자연락처
+		     , B7.TEL_NO              AS TEL_NO          --담당자연락처(암호화)
+		     , B6.CHRG_ORGN_CODE      AS CHRG_ORGN_CODE  --담당기관코드
+		     , B8.ORGN_NAME           AS CHRG_ORGN_NAME  --담당기관명
+			 , B3.IMAG_ACCT_NO        AS IMAG_ACCT_NO    --가상계좌번호
+		  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+		     , NBMADMIN.TB_BMBND400 B2 /* 한국신용정보원집중기본 */
+		     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+		     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+		     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+		     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본  */
+		     , NBMADMIN.TB_CMORG002 B7 /* 사원기본      */
+		     , NBMADMIN.TB_CMORG001 B8 /* 기관기본      */ 
+		     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+		     , NBMADMIN.TB_BMBND100 X  /* 미수채권상세    */
+		     , NBMADMIN.TB_BMBND010 Y  /* 환수수수료기본   */
+		     , (
+				/*법조치 본안소송/지급명령건 확정일자등 확인*/
+				SELECT B.BOND_ADMN_NO   
+				     , DECODE(A.RQST_DATE  ,'','', ' ','', REGEXP_REPLACE(A.RQST_DATE  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS RQST_DATE   /*신청일자*/
+				     , A.JDAF_RQST_DVCD  /*법무신청구분코드*/
+				     , A.JDAF_DTAL_DVCD  /*법무상세구분코드*/
+				     , DECODE(A.DCSN_DT    ,'','', ' ','', REGEXP_REPLACE(A.DCSN_DT    ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS DCSN_DT     /*결정일자*/
+				     , DECODE(A.DCSN_DATE  ,'','', ' ','', REGEXP_REPLACE(A.DCSN_DATE  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS DCSN_DATE   /*확정일자*/
+				     , DECODE(A.RCOD_DDAT  ,'','', ' ','', REGEXP_REPLACE(A.RCOD_DDAT  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS RCOD_DDAT   /*등재기일*/
+				     , DECODE(A.CLST_DDAT  ,'','', ' ','', REGEXP_REPLACE(A.CLST_DDAT  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS CLST_DDAT   /*명시기일*/
+				     , DECODE(A.JDAF_END_DT,'','', ' ','', REGEXP_REPLACE(A.JDAF_END_DT,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS JDAF_END_DT /*법무종결일자*/
+				     , A.JRDT_CURT_CODE  /*관할법원코드*/
+				     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+				           WHERE X.CODE_GRP = 'JRDT_CURT_CODE' AND X.CODE_VAL = A.JRDT_CURT_CODE
+				       ),'')       AS JRDT_CURT_NAME  /*관할법원코드명*/
+				     , A.MATT_NO_YEAR || A.MTNO_CD || A.MATT_NO_SQNO AS MATT_NO /* 사건번호 */
+				     , DECODE(A.MTNO_CD,'','',
+				       A.MATT_NO_YEAR || NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X
+				                               WHERE X.CODE_GRP = 'MTNO_CD' AND X.CODE_VAL = A.MTNO_CD),'')
+				                      || A.MATT_NO_SQNO) AS MATT_NM /* 사건번호명  */
+				  FROM NBMADMIN.TB_LGLGA008 A
+				     , NBMADMIN.TB_LGPPS004 B
+				 WHERE A.JDAF_RTNO         = B.JDAF_RTNO
+				   AND A.DCSN_DATE         IS NOT NULL
+				   AND LENGTH(A.DCSN_DATE) = 8
+				   AND TO_CHAR(TO_DATE(A.LAWS_PRPO_DATE,'YYYYMMDD')+4,'YYYYMMDD') = #{stddYd}  -- 소제기일자 +3일 이후 발송
+				) Z  /* 법무처리 */
+		 WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+		   AND B1.BOND_KIND_CODE = '20'              /* 채권종류코드 20-편취보험금 */ 
+		   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+		   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+		   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+		   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID     */
+		   AND B5.CUST_ADDR      IS NOT NULL
+		   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+		   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+		   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+		   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO   /* 채권관리번호   */
+		   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+		   AND B9.SEND_METD_DVCD = '5'               /* 발송방법구분코드 5-알림톡 */
+		   AND B9.SEND_DATE      IS      NULL
+		   AND B1.BOND_ADMN_NO   = B2.BOND_ADMN_NO   /* 채권관리번호   */
+		   AND B3.DEBT_PRTR_SEQ  = B2.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+		   AND B4.BOND_ADMN_NO   =  X.BOND_ADMN_NO   /* 채권관리번호   */
+		   AND B4.BOND_SEQ       =  X.BOND_SEQ       /* 채권순번       */
+		   AND Y.STDD_YM         =  SUBSTR(Z.DCSN_DATE,1,6) /*확정일자-월*/
+		   AND B1.FNPL_PRNO      =  Y.FNPL_PRNO      /* FP고유번호 */
+		   AND B1.BOND_ADMN_NO   =  Z.BOND_ADMN_NO   /* 채권관리번호  */
+		   AND Z.MATT_NM         IS  NOT NULL
+-- 2019.11.05 기발송건 재발송처리 제외 : 임철우 과장 요청으로 일단 배제		   
+--		   AND NOT EXISTS ( SELECT 1
+--		                      FROM NBMADMIN.TB_BMBND410 X    /* 채무관계자발송내역 */
+--		                     WHERE X.BOND_ADMN_NO   = B.BOND_ADMN_NO    /* 채권관리번호 */
+--		                       AND X.CUST_ID        = B.MDBT_CUST_ID    /* 고객ID       */
+--		                       AND X.BDAM_NTLT_KDCD = '03'  /*금융질서문란자*/
+--		                       AND X.TRNM_STAT_CODE IN ('10','20','30')
+--		                  )		   
+		GROUP BY B3.BOND_ADMN_NO, B3.DEBT_PRTR_SEQ, Y.FNPL_PRNO, B5.CUST_ID, B5.CUST_NAME, B5.CUST_CNNO, B1.BOND_KIND_CODE   
+		, Y.ETRS_DATE, Y.FIRE_DATE, Z.DCSN_DATE, B6.CHGM_MPNO, B7.EMPL_NAME, B7.TEL_NO, B6.CHRG_ORGN_CODE
+		, B8.ORGN_NAME, B3.IMAG_ACCT_NO, Z.JRDT_CURT_NAME, Z.MATT_NM, B1.CVCS_DCSN_DT
+		, B5.ZIP_NO_1, B5.ZIP_NO_2, B5.CUST_ADDR, B5.CUST_DTAL_ADDR 
+		) A
+
+</select>
+<resultMap id="NBLGLGA100JVO1" type="com.hanwhalife.nbm.batch.vo.lg.NBLGLGA100JVO1">
+<result property="notiTmplCode" column="NOTI_TMPL_CODE"  />
+<result property="barCodeNo"    column="BAR_CODE_NO"     />
+<result property="bondAdmnNo"   column="BOND_ADMN_NO"    />
+<result property="debtPrtrSeq"  column="DEBT_PRTR_SEQ"   />
+<result property="polyNo"       column="POLY_NO"         />
+<result property="fnplPrno"     column="FNPL_PRNO"       />
+<result property="pstnOrgnCode" column="PSTN_ORGN_CODE"  />
+<result property="pstnOrgnName" column="PSTN_ORGN_NAME"  />
+<result property="custId"       column="CUST_ID"         />
+<result property="custName"     column="CUST_NAME"       />
+<result property="custCnno"     column="CUST_CNNO"       />
+<result property="custZpno"     column="CUST_ZPNO"       />
+<result property="custAddr"     column="CUST_ADDR"       />
+<result property="custDtalAddr" column="CUST_DTAL_ADDR"  />
+<result property="bondKindCode" column="BOND_KIND_CODE"  />
+<result property="bondKindName" column="BOND_KIND_NAME"  />
+<result property="etrsDate"     column="ETRS_DATE"       />
+<result property="fireDate"     column="FIRE_DATE"       />
+<result property="jrdtCurtName" column="JRDT_CURT_NAME"  />
+<result property="mattNm"       column="MATT_NM"         />
+<result property="ucolBondBaln" column="UCOL_BOND_BALN"  />
+<result property="dcsnDate"     column="DCSN_DATE"       />
+<result property="debtRepyDt"   column="DEBT_REPY_DT"    />
+<result property="emplNo"       column="EMPL_NO"         />
+<result property="emplName"     column="EMPL_NAME"       />
+<result property="telNo"        column="TEL_NO"          />
+<result property="chrgOrgnCode" column="CHRG_ORGN_CODE"  />
+<result property="chrgOrgnName" column="CHRG_ORGN_NAME"  />
+<result property="imagAcctNo"   column="IMAG_ACCT_NO"    />
+<result property="notiTmplName" column="NOTI_TMPL_NAME"  />
+<result property="msgCont"      column="MSG_CONT"        />
+<result property="mpno"         column="MPNO"            />
+<result property="pgmId"        column="PGM_ID"          />
+</resultMap>
+
+<select id="LGLGA008L002B" parameterType="paramMap" resultMap="NBLGLGA100JVO1">
+/* 내   용 : 안내장 대상 조회  
+        - 채무불이행자 등재 착수 예고 [NOTI0004] 
+ * 매퍼명 : lgBatchMapper.LGLGA008L002B
+ * 작성자 : 1073300
+ * 최종변경일 : 2019.10.10
+ */
+SELECT A.NOTI_TMPL_CODE  --안내장템플릿코드 : 채무불이행자 등재 착수 예고 [NB04]
+     , REPLACE('10115'||'109'||'04'||#{stddYd}||TO_CHAR(ROWNUM,'000000000'),' ','') AS BAR_CODE_NO    /* 회사코드(5)+업무코드(3)+안내장종류(2)+안내장발행기준일자(8)+일련번호(9) */
+     , A.BOND_ADMN_NO    --
+     , A.DEBT_PRTR_SEQ   --채무관계자순번
+     , A.POLY_NO         --증권번호
+     , A.FNPL_PRNO       --고유번호
+     , A.PSTN_ORGN_CODE  --소속기관코드
+     , A.PSTN_ORGN_NAME  --소속기관코드명
+     , A.CUST_ID         --고객ID
+     , A.CUST_NAME       --고객명 
+     , A.CUST_CNNO       --고객전화번호
+     , A.CUST_ZPNO       --고객우편번호
+     , A.CUST_ADDR       --고객주소
+     , A.CUST_DTAL_ADDR  --고객상세주소
+     , A.BOND_KIND_CODE  --채권종류코드
+     , A.BOND_KIND_NAME  --채권종류코드명 
+     , A.ETRS_DATE       --위촉일자
+     , A.FIRE_DATE       --해촉일자
+     , A.JRDT_CURT_NAME  --관할법원코드명
+     , A.MATT_NM         --사건번호명 
+     , A.UCOL_BOND_BALN  --채권잔액
+     , A.DCSN_DATE       --확정일자
+     , A.DEBT_REPY_DT    --채무변제일자=확정일자+6개월후말일자
+     , A.EMPL_NO         --담당자사번
+     , A.EMPL_NAME       --담당자명
+     , A.TEL_NO          --담당자연락처
+     , A.CHRG_ORGN_CODE  --담당기관코드
+     , A.CHRG_ORGN_NAME  --담당기관명
+     , A.IMAG_ACCT_NO    --가상계좌번호
+  FROM (
+		SELECT 'NB04'                 AS NOTI_TMPL_CODE  --안내장템플릿코드 : 채무불이행자 등재 착수 예고 [NB04]
+		     , B3.BOND_ADMN_NO        AS BOND_ADMN_NO    --
+		     , B3.DEBT_PRTR_SEQ       AS DEBT_PRTR_SEQ   --채무관계자순번
+		     , MAX(X.POLY_NO)         AS POLY_NO         --증권번호
+			 , Y.FNPL_PRNO            AS FNPL_PRNO       --고유번호
+			 , Y.PSTN_ORGN_CODE       AS PSTN_ORGN_CODE  --소속기관코드
+			 , NVL((SELECT ORGN_NAME FROM NBMADMIN.TB_CMORG001 
+			         WHERE ORGN_CODE = Y.PSTN_ORGN_CODE),'') AS PSTN_ORGN_NAME -- 소속기관코드명
+		     , B5.CUST_ID             AS CUST_ID         --고객ID
+		     , B5.CUST_NAME           AS CUST_NAME       --고객명 
+		     , B5.CUST_CNNO           AS CUST_CNNO       --고객전화번호
+             , CASE WHEN LENGTH(REPLACE(B5.ZIP_NO_1||B5.ZIP_NO_2,' ','')) = 6 
+                    THEN LPAD  (REPLACE(B5.ZIP_NO_1||B5.ZIP_NO_2,' ',''),6,'0')
+                    ELSE LPAD  (REPLACE(B5.ZIP_NO_1||B5.ZIP_NO_2,' ',''),5,'0') 
+                    END  AS CUST_ZPNO     --고객우편번호
+		     , B5.CUST_ADDR           AS CUST_ADDR       --고객주소
+		     , B5.CUST_DTAL_ADDR      AS CUST_DTAL_ADDR  --고객상세주소
+		     , B1.BOND_KIND_CODE      AS BOND_KIND_CODE  --채권종류코드
+		     , '수수료채권'              AS BOND_KIND_NAME  --채권종류코드명 
+		     , DECODE(Y.ETRS_DATE ,'','', ' ','', REGEXP_REPLACE(Y.ETRS_DATE ,'(.{4})(.{2})(.{2})','\1-\2-\3'))  AS ETRS_DATE       --위촉일자
+		     , DECODE(Y.FIRE_DATE ,'','', ' ','', REGEXP_REPLACE(Y.FIRE_DATE ,'(.{4})(.{2})(.{2})','\1-\2-\3'))  AS FIRE_DATE       --해촉일자
+			 , Z.JRDT_CURT_NAME       AS JRDT_CURT_NAME  --관할법원코드명
+			 , Z.MATT_NM              AS MATT_NM         --사건번호명 
+			 , TO_CHAR(SUM(X.UCOL_BOND_BALN), '99,999,999,999')   AS UCOL_BOND_BALN  --채권잔액
+			 , Z.DCSN_DATE            AS DCSN_DATE       --확정일자
+			 , Z.DEBT_REPY_DT         AS DEBT_REPY_DT    --채무변제일자=확정일자+6개월후말일자
+		     , B6.CHGM_MPNO           AS EMPL_NO         --담당자사번
+		     , B7.EMPL_NAME           AS EMPL_NAME       --담당자명
+		     , B7.TEL_NO              AS TEL_NO          --담당자연락처
+		     , B6.CHRG_ORGN_CODE      AS CHRG_ORGN_CODE  --담당기관코드
+		     , B8.ORGN_NAME           AS CHRG_ORGN_NAME  --담당기관명
+			 , B3.IMAG_ACCT_NO        AS IMAG_ACCT_NO    --가상계좌번호
+		  FROM NBMADMIN.TB_BMBND001 B1 /* 미수채권기본     */ 
+		     , NBMADMIN.TB_BMBND006 B3 /* 채무관계자기본   */
+		     , NBMADMIN.TB_BMBND007 B4 /* 채무관계자미수채권관계 */
+		     , NBMADMIN.TB_BMBND900 B5 /* 미수채권고객기본 */
+		     , NBMADMIN.TB_BMBND050 B6 /* 채권담당자기본   */
+		     , NBMADMIN.TB_CMORG002 B7 /* 사원기본         */
+		     , NBMADMIN.TB_CMORG001 B8 /* 기관기본         */ 
+		     , NBMADMIN.TB_BMBND410 B9 /* 채무관계자발송내역 */
+		     , NBMADMIN.TB_BMBND100 X  /* 미수채권상세      */
+		     , NBMADMIN.TB_BMBND010 Y  /* 환수수수료기본   */
+		     , (
+				/*법조치 본안소송/지급명령건 확정일자등 확인*/
+				SELECT B.BOND_ADMN_NO   
+				     , DECODE(A.RQST_DATE  ,'','', ' ','', REGEXP_REPLACE(A.RQST_DATE  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS RQST_DATE    /*신청일자*/
+				     , A.JDAF_RQST_DVCD  /*법무신청구분코드*/
+				     , A.JDAF_DTAL_DVCD  /*법무상세구분코드*/
+				     , DECODE(A.DCSN_DT    ,'','', ' ','', REGEXP_REPLACE(A.DCSN_DT    ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS DCSN_DT      /*결정일자*/
+				     , DECODE(A.DCSN_DATE  ,'','', ' ','', REGEXP_REPLACE(A.DCSN_DATE  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS DCSN_DATE    /*확정일자*/
+				     , TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(A.DCSN_DATE,'YYYYMMDD'),6)),'YYYY-MM-DD')              AS DEBT_REPY_DT /*채무변제일자=확정일자+6개월후말일자*/
+				     , DECODE(A.RCOD_DDAT  ,'','', ' ','', REGEXP_REPLACE(A.RCOD_DDAT  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS RCOD_DDAT    /*등재기일*/
+				     , DECODE(A.CLST_DDAT  ,'','', ' ','', REGEXP_REPLACE(A.CLST_DDAT  ,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS CLST_DDAT    /*명시기일*/
+				     , DECODE(A.JDAF_END_DT,'','', ' ','', REGEXP_REPLACE(A.JDAF_END_DT,'(.{4})(.{2})(.{2})','\1-\2-\3')) AS JDAF_END_DT  /*법무종결일자*/
+				     , A.JRDT_CURT_CODE  /*관할법원코드*/
+				     , NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X 
+				           WHERE X.CODE_GRP = 'JRDT_CURT_CODE' AND X.CODE_VAL = A.JRDT_CURT_CODE
+				       ),'')       AS JRDT_CURT_NAME  /*관할법원코드명*/
+				     , A.MATT_NO_YEAR || A.MTNO_CD || A.MATT_NO_SQNO AS MATT_NO /* 사건번호 */
+				     , DECODE(A.MTNO_CD,'','',
+				       A.MATT_NO_YEAR || NVL((SELECT X.CODE_NAME FROM NBMADMIN.TB_CMCOD002 X
+				                               WHERE X.CODE_GRP = 'MTNO_CD' AND X.CODE_VAL = A.MTNO_CD),'')
+				                      || A.MATT_NO_SQNO) AS MATT_NM /* 사건번호명  */
+				  FROM NBMADMIN.TB_LGLGA008 A
+				     , NBMADMIN.TB_LGPPS004 B
+				 WHERE A.JDAF_RTNO      = B.JDAF_RTNO
+				   AND A.JDAF_RQST_DVCD =   '20'       /*지급소송*/
+				   AND A.JDAF_DTAL_DVCD IN ('21','22') /*본안소송,지급명령*/   
+				   AND A.DCSN_DATE      IS NOT NULL
+				   AND LENGTH(A.DCSN_DATE) = 8
+				   AND TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE(A.DCSN_DATE,'YYYYMMDD'),5)),'YYYYMMDD') = #{stddYd}  -- 발송 대상일자=확정일자+5개월이후말일자
+				)  Z  /* 법무처리 */
+		 WHERE B1.BOND_STCD      = '01'              /* 채권상태코드   */ 
+		   AND B1.BOND_KIND_CODE = '10'              /* 채권종류코드 10-수수료채권 */ 
+		   AND B1.CVCS_DCSN_DT   IS NOT NULL
+		   AND B1.BOND_ADMN_NO   = B3.BOND_ADMN_NO 
+		   AND B3.BOND_ADMN_NO   = B4.BOND_ADMN_NO   /* 채권관리번호   */
+		   AND B3.DEBT_PRTR_SEQ  = B4.DEBT_PRTR_SEQ  /* 채무관계자순번 */
+		   AND B3.CUST_ID        = B5.CUST_ID        /* 고객ID */
+		   AND B5.CUST_ADDR      IS NOT NULL
+		   AND B1.BOND_ADMN_NO   = B6.BOND_ADMN_NO
+		   AND B6.CHGM_MPNO      = B7.EMPL_NO        /* 담당자사번 : 사원번호 */
+		   AND B7.WORK_PSTN_OGCD = B8.ORGN_CODE      /* 기관코드       */ 
+		   AND B3.BOND_ADMN_NO   = B9.BOND_ADMN_NO (+)  /* 채권관리번호   */
+		   AND B3.DEBT_PRTR_SEQ  = B9.DEBT_PRTR_SEQ(+)  /* 채무관계자순번 */
+		   AND B9.SEND_METD_DVCD(+) = '1'               /* 발송방법구분코드 1-DM */
+		   AND B9.SEND_DATE     (+) IS      NULL
+		   AND B4.BOND_ADMN_NO   =  X.BOND_ADMN_NO    /* 채권관리번호   */
+		   AND B4.BOND_SEQ       =  X.BOND_SEQ        /* 채권순번       */
+		   AND Y.STDD_YM         =  SUBSTR(#{stddYd},1,6) /*기준일자-월*/
+		   AND B1.FNPL_PRNO      =  Y.FNPL_PRNO   
+		   AND B1.BOND_ADMN_NO   =  Z.BOND_ADMN_NO   /* 채권관리번호   */
+		   AND Z.MATT_NM         IS  NOT NULL
+-- 2019.11.05 기발송건 재발송처리 제외 : 임철우 과장 요청으로 일단 배제        
+--		   AND NOT EXISTS ( SELECT 1
+--                              FROM NBMADMIN.TB_BMBND410 X    /* 채무관계자발송내역 */
+--                             WHERE X.BOND_ADMN_NO   = B1.BOND_ADMN_NO   /* 채권관리번호 */
+--                               AND X.CUST_ID        = B1.MDBT_CUST_ID   /* 고객ID */
+--                               AND X.BDAM_NTLT_KDCD = '04'              /* 채무불이행자 */
+--                               AND X.TRNM_STAT_CODE IN ('10','20','30')
+--                          ) 
+		GROUP BY B3.BOND_ADMN_NO, B3.DEBT_PRTR_SEQ, Y.FNPL_PRNO, B5.CUST_ID, B5.CUST_NAME, B5.CUST_CNNO, B1.BOND_KIND_CODE   
+		, Y.ETRS_DATE, Y.FIRE_DATE, Z.DCSN_DATE, B6.CHGM_MPNO, B7.EMPL_NAME, B7.TEL_NO, B6.CHRG_ORGN_CODE
+		, B8.ORGN_NAME, B3.IMAG_ACCT_NO, Z.JRDT_CURT_NAME, Z.MATT_NM, Z.DEBT_REPY_DT, Y.PSTN_ORGN_CODE
+		, B5.ZIP_NO_1, B5.ZIP_NO_2, B5.CUST_ADDR, B5.CUST_DTAL_ADDR
+	   ) A
+
+</select>
+
+
+<insert id="BMBND410I002" parameterType="paramMap">
+/* 내용 : 채무관계자발송내역 안내장 등록
+ * 매퍼명 : bmBatchMapper.BMBND410I002
+ * 작성자 : 1073300
+ * 최종변경일 : 2019.10.11
+ */
+INSERT INTO NBMADMIN.TB_BMBND410    /* 채무관계자발송내역 */
+(
+       BOND_ADMN_NO      /* 채권관리번호           */
+     , DEBT_PRTR_SEQ     /* 채무관계자순번         */
+     , SEND_SEQ_NO       /* 발송일련번호           */
+     , LAST_CHMN_MPNO    /* 최종변경자사번         */
+     , LAST_CHNG_DTTM    /* 최종변경일시           */
+     , PGM_ID            /* 프로그램ID      */
+     , FRST_RGTR_MPNO    /* 최초등록자사번         */
+     , FRST_RGST_DTTM    /* 최초등록일시           */
+     , SEND_METD_DVCD    /* 발송방법구분코드       */
+     , BDAM_NTLT_KDCD    /* 채권관리안내장종류코드 */
+     , CUST_ID           /* 고객ID         */
+     , RQST_DATE         /* 신청일자               */
+     , SEND_DATE         /* 발송일자               */
+     , SEND_ZPNO         /* 발송우편번호           */
+     , SEND_ADDR         /* 발송주소               */
+     , SEND_DTAL_ADDR    /* 발송상세주소           */
+     , SENR_NAME         /* 발송자명               */
+     , ADDR_DVCD         /* 주소구분코드           */
+     , CUST_ZPNO         /* 고객우편번호           */
+     , CUST_ADDR         /* 고객주소               */
+     , CUST_DTAL_ADDR    /* 고객상세주소           */
+     , RCPT_NAME         /* 수신자명               */
+     , CHGM_CNTA_NO      /* 담당자연락번호         */
+     , CUST_CNNO         /* 고객연락처             */
+     , SEND_CTEN         /* 발송내용               */
+     , TRNM_STAT_CODE    /* 전송상태코드           */
+     , TRNM_RTCD         /* 전송결과코드           */
+     , TRNM_ERCD         /* 전송오류코드           */
+     , RETN_YN           /* 반송여부               */
+     , RETN_DATE         /* 반송일자               */
+     , MAIL_RETN_RSCD    /* 우편물반송사유코드  */
+     , DLGS_ORGN_ID      /* 거래기관ID      */
+     , TRDR_MPNO         /* 거래자사번             */
+     , LAST_TRNM_DTTM    /* 최종전송일시           */
+     , BAR_CODE_NO       /* 바코드번호 */
+     , DELR_DT           /* 배달일자       */
+     , DELR_RTCD         /* 배달결과코드   */
+     , REVR_NAME         /* 수령인명       */
+     , REVR_RLCD         /* 수령인관계코드 */
+     , RGML_RGST_NO      /* 등기우편번호   */
+)
+VALUES (
+       #{bondAdmnNo}      /* 채권관리번호           */
+     , #{debtPrtrSeq}     /* 채무관계자순번         */
+     , #{sendSeqNo}       /* 발송일련번호           */
+     , #{mpno}            /* 최종변경자사번         */
+     , SYSDATE            /* 최종변경일시           */
+     , #{pgmId}           /* 프로그램ID      */
+     , #{mpno}            /* 최초등록자사번         */
+     , SYSDATE            /* 최초등록일시           */
+     , #{sendMetdDvcd}    /* 발송방법구분코드=1(DM) */
+     , #{bdamNtltKdcd}    /* 채권관리안내장종류코드 */
+     , #{custId}          /* 고객ID         */
+     , TO_CHAR(SYSDATE,'YYYYMMDD')        /* 신청일자               */
+     , TO_CHAR(SYSDATE,'YYYYMMDD')        /* 발송일자               */
+     , ''                 /* 발송우편번호          */
+     , ''                 /* 발송주소               */
+     , ''                 /* 발송상세주소          */
+     , #{emplName}        /* 발송자명               */
+     , '00'               /* 주소구분코드           */
+     , '0'                 /* 고객우편번호           */
+     , ''                 /* 고객주소               */
+     , ''                 /* 고객상세주소           */
+     , #{custName}        /* 수신자명               */
+     , #{telNo}           /* 담당자연락번호         */
+     , #{custCnno}        /* 고객연락처             */
+     , '' /* 발송내용  */
+     , NVL(#{trnmStatCode},'')    /* 전송상태코드           */
+     , NVL(#{trnmRtcd},'')        /* 전송결과코드           */
+     , NVL(#{trnmErcd},'')        /* 전송오류코드           */
+     , 'N'                /* 반송여부               */
+     , ''                 /* 반송일자               */
+     , '00'               /* 우편물반송사유코드  */
+     , ''                 /* 거래기관ID      */
+     , ''                 /* 거래자사번             */
+     , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')    /* 최종전송일시           */
+     , #{barCodeNo} /*바코드번호*/
+     , TO_CHAR(SYSDATE, 'YYYYMMDD')    /* 배달일자  */         
+     , ''                 /* 배달결과코드   */
+     , ''                 /* 수령인명       */
+     , ''                 /* 수령인관계코드 */
+     , ''                 /* 등기우편번호   */
+)
+</insert>
+
+<select id="BMBND410L006B" parameterType="paramMap" resultMap="NBLGLGA100JVO2">
+/* 내용 : 우편물 출력건수 처리
+ * 매퍼명 : lgBatchMapper.BMBND410L006B
+ * 작성자 : 1073440
+ * 최종변경일 : 2019.10.07
+ */
+SELECT #{cnt} AS CNT
+  FROM DUAL
+</select>
+<resultMap id="NBLGLGA100JVO2" type="com.hanwhalife.nbm.batch.vo.lg.NBLGLGA100JVO2">
+<result property="cnt" column="CNT"/></resultMap>
+
+<select id="CMBAT001S001B" parameterType="paramMap" resultMap="NBLGLGA100JVO3">
+/* 내용 : 환수수수료 안내장 일괄발송 대상 조회 - 일회성
+ * 매퍼명 : lgBatchMapper.CMBAT001S001B
+ * 작성자 : 1073440 
+ * 최종변경일 : 2019.11.06
+ */
+SELECT MAX(A.BTCH_WORK_SQNO)+50 AS BTCH_WORK_SQNO
+  FROM TB_CMBAT001 A    /* 배치목록 */
+ WHERE LAOT_STDD_DATE = TO_CHAR(SYSDATE,'YYYYMMDD')
+   AND BTCH_JOB_ID = #{btchJobId}
+</select>
+<resultMap id="NBLGLGA100JVO3" type="com.hanwhalife.nbm.batch.vo.lg.NBLGLGA100JVO3">
+<result property="btchWorkSqno" column="BTCH_WORK_SQNO"/></resultMap>
+
+</mapper>
