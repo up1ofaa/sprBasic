@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+  xsi:schemaLocation="http://www.springframework.org/schema/batch
+  http://www.springframework.org/schema/batch/spring-batch.xsd
+  http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/util
+  http://www.springframework.org/schema/util/spring-util.xsd
+  ">
+  <!-- 
+    ==================================
+    NBBMBND823J 위탁사담당자정보파일수신(월작업)
+    ==================================
+    >> STEP1 : 담당자정보 변경
+        1. jobParameters : 파일 Name
+        2. reader        : Upload 파일 Read
+        3. processor     : NBBMBND823JProcessor 처리
+        4. writer        : bmBatchMapper.BMBND520U002B 호출
+   -->
+  
+   <import resource="../abstract/eGovBase.xml" />
+    <import resource="classpath:/batch/context-batch-job-launcher.xml" />
+    <batch:job id="NBBMBND823J" parent="eGovBaseJob">
+        
+        <!-- STEP1 : STEP1 : 담당자정보 변경 -->
+        <batch:step id="NBBMBND823JStep" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND823JReader"
+                    processor       ="NBBMBND823JProcessor" 
+                    writer          ="NBBMBND823JWriter"
+                    commit-interval ="100"
+                    />
+            </batch:tasklet>
+        </batch:step>
+        
+    </batch:job>
+    
+    <!-- 읽기 -->
+    <bean id="NBBMBND823JReader" class="org.springframework.batch.item.file.FlatFileItemReader" scope="step">
+      <!-- <property name="resource" value="file:/hli_data/and/recv/MBTACHGM_#{jobParameters['arg1']}.dat" ></property> -->
+      <property name="resource" value="file:/app/data/hli_data/and/recv/MBTACHGM_#{jobParameters['arg1']}.dat" ></property>
+      <property name="encoding" value="euc-kr"></property>
+      <property name="lineMapper" >
+        <bean class="egovframework.rte.bat.core.item.file.mapping.EgovDefaultLineMapper">
+             <property name="lineTokenizer">
+                 <bean class="egovframework.rte.bat.core.item.file.transform.EgovFixedByteLengthTokenizer">
+                     <property name="byteEncoding" value="euc-kr"/>
+                     <property name="columns" value="1-14, 15-24, 25-74, 75-84, 85-134, 135-200" />
+                 </bean>
+             </property>
+             <property name="objectMapper" >
+              <bean class="egovframework.rte.bat.core.item.file.mapping.EgovObjectMapper">
+                <property name="type" value="com.hanwhalife.nbm.batch.vo.bm.NBBMBND823JVO" />
+                <property name="names" value="bondAdmnNo, chrgOrgnCode, deptName, chgmMpno, trcoChgmName, etc"></property>
+              </bean>
+          </property>
+         </bean>
+      </property>
+    </bean>
+
+	  <!-- 처리 -->
+	  <bean id="NBBMBND823JProcessor" class="com.hanwhalife.nbm.batch.processor.bm.NBBMBND823JProcessor" scope="step"/>
+  
+	  <!-- 쓰기-->
+	  <bean id="NBBMBND823JWriter" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+	    <property name="assertUpdates" value="false"></property>
+	    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+	    <property name="statementId" value="bmBatchMapper.BMBND520U002B" />
+	  </bean>
+  
+</beans>
