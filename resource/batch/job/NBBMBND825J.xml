@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+  xsi:schemaLocation="http://www.springframework.org/schema/batch
+  http://www.springframework.org/schema/batch/spring-batch.xsd
+  http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/util
+  http://www.springframework.org/schema/util/spring-util.xsd
+  ">
+  <!-- 
+    ==================================
+    NBBMBND825J 전일자수납내역(일작업)
+    ==================================
+    >> STEP1 : 전일자수납내역 조회  
+        1. jobParameters : stddYm
+        2. reader        : bmBatchMapper.BMBND040S001B 호출
+        3. processor     : NBBMBND825JProcessor 처리
+        4. writer        : NBBMBND825JWriter1
+                           bmBatchMapper.BMBND001U001 호출
+                           bmBatchMapper.BMBND520U001 호출
+   -->
+  
+   <import resource="../abstract/eGovBase.xml" />
+    <import resource="classpath:/batch/context-batch-job-launcher.xml" />
+    <batch:job id="NBBMBND825J" parent="eGovBaseJob">
+    
+        <!-- STEP1 : 위탁종결대상 조회 -->
+        <batch:step id="NBBMBND825JStep" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND825JReader"
+                    processor       ="NBBMBND825JProcessor"
+                    writer          ="NBBMBND825JWriter"
+                    commit-interval ="100"
+                />
+            </batch:tasklet>
+        </batch:step>
+        
+    </batch:job>
+    
+  <!-- 읽기 -->
+  <bean id="NBBMBND825JReader" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <property name="queryId" value="bmBatchMapper.BMBND040S001B" />
+    <property name="parameterValues">
+        <map>
+            <entry key="STDD_DATE" value ="#{jobParameters['arg1']}" />
+        </map>
+      </property>
+  </bean>
+
+  <!-- 처리 -->
+  <bean id="NBBMBND825JProcessor" class="com.hanwhalife.nbm.batch.processor.bm.NBBMBND825JProcessor" scope="step"/>
+    
+   <!-- 쓰기(Step1) -->
+   <bean id="NBBMBND825JWriter" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+     <property name="resource" value="file:/app/data/hli_data/and/send/NBBAT_JACS_RECVLIST_#{jobParameters['arg1']}.dat"></property>     
+     <property name="encoding" value="euc-kr"></property>
+     <property name="lineAggregator" >
+     <bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+         <property name="delimiter" value=""></property>
+         <property name="fieldExtractor">
+             <bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                 <property name="names" value="dlgsDate, bondAdmnNo, FnplPrno, CustName, DlgsAmt"></property>
+             </bean>
+         </property>
+     </bean>
+     </property>
+   </bean>
+     
+</beans>
