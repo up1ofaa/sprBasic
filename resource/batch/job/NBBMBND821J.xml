@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+  xsi:schemaLocation="http://www.springframework.org/schema/batch
+  http://www.springframework.org/schema/batch/spring-batch.xsd
+  http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/util
+  http://www.springframework.org/schema/util/spring-util.xsd
+  ">
+  <!-- 
+    ==================================
+    NBBMBND821J 위탁종결내역파일전송(일작업)
+    ==================================
+    >> STEP1 : 위탁종결대상 조회  
+        1. jobParameters : stddYm
+        2. reader        : bmBatchMapper.BMBND001L002B 호출
+        3. processor     : NBBMBND821JProcessor 처리
+        4. writer        : NBBMBND821JWriter1
+                           bmBatchMapper.BMBND001U001 호출
+                           bmBatchMapper.BMBND520U001 호출
+   -->
+  
+   <import resource="../abstract/eGovBase.xml" />
+    <import resource="classpath:/batch/context-batch-job-launcher.xml" />
+    <batch:job id="NBBMBND821J" parent="eGovBaseJob">
+    
+        <!-- STEP1 : 위탁종결대상 조회 -->
+        <batch:step id="NBBMBND821JStep" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND821JReader"
+                    processor       ="NBBMBND821JProcessor"
+                    writer          ="NBBMBND821JWriter"
+                    commit-interval ="100"
+                />
+            </batch:tasklet>
+        </batch:step>
+        
+    </batch:job>
+    
+  <!-- 읽기 -->
+  <bean id="NBBMBND821JReader" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <property name="queryId" value="bmBatchMapper.BMBND001L002B" />
+    <property name="parameterValues">
+        <map>
+            <entry key="STDD_DATE" value ="#{jobParameters['arg1']}" />
+        </map>
+      </property>
+  </bean>
+
+  <!-- 처리 -->
+  <bean id="NBBMBND821JProcessor" class="com.hanwhalife.nbm.batch.processor.bm.NBBMBND821JProcessor" scope="step"/>
+  
+  <!-- 다중 쓰기 -->
+  <bean id="NBBMBND821JWriter" class="org.springframework.batch.item.support.CompositeItemWriter">
+      <property name="delegates">
+          <list>
+              <ref bean="NBBMBND821JWriter1"/>
+              <ref bean="NBBMBND821JWriter2"/>
+              <ref bean="NBBMBND821JWriter3"/>
+          </list>
+      </property>
+  </bean>
+  
+   <!-- 쓰기(1) -->
+   <bean id="NBBMBND821JWriter1" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+     <!-- <property name="resource" value="file:/hli_data/and/send/BMBNDEND_#{jobParameters['arg2']}.dat"></property> -->
+      <property name="resource" value="file:/app/data/hli_data/and/send/NBBAT_JACS_BMBNDEND_#{jobParameters['arg2']}.dat"></property>
+     <property name="encoding" value="euc-kr"></property>
+     <property name="lineAggregator" >
+     <bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+         <property name="delimiter" value=""></property>
+         <property name="fieldExtractor">
+             <bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                 <property name="names" value="bondAdmnNo, bdamEndDate, bondEndRscd, etc"></property>
+             </bean>
+         </property>
+     </bean>
+     </property>
+   </bean>
+    <!-- 쓰기(2) -->
+    <bean id="NBBMBND821JWriter2" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+      <property name="assertUpdates" value="false"></property>
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="statementId" value="bmBatchMapper.BMBND001U001B" />
+    </bean>
+    <!-- 쓰기(3) -->
+    <bean id="NBBMBND821JWriter3" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+      <property name="assertUpdates" value="false"></property>
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="statementId" value="bmBatchMapper.BMBND520U001B" />
+    </bean>
+  
+</beans>
