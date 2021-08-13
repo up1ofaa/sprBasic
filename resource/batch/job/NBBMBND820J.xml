@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+  xsi:schemaLocation="http://www.springframework.org/schema/batch
+  http://www.springframework.org/schema/batch/spring-batch.xsd
+  http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/util
+  http://www.springframework.org/schema/util/spring-util.xsd
+  ">
+  <!-- 
+    ==================================
+    NBBMBND820J 위탁내역파일전송(월작업)
+    ==================================
+    >> STEP1 : 채권원장 조회  
+        1. jobParameters : stddYm
+        2. reader        : bmBatchMapper.BMBND001L001B 호출
+        3. processor     : NBBMBND820JProcessor 처리
+        4. writer        : NBBMBND820JWriter1
+                           
+    >> STEP2 : 채권상세 조회
+        1. jobExecutionContext : stddYm
+        2. reader              : bmBatchMapper.BMBND001L002B 호출
+        3. processor           : NBBMBND820JProcessor2 처리
+        4. writer              : NBBMBND820JWriter2
+   -->
+  
+   <import resource="../abstract/eGovBase.xml" />
+   <import resource="classpath:/batch/context-batch-job-launcher.xml" />
+    
+    <batch:job id="NBBMBND820J" parent="eGovBaseJob">
+    
+        <!-- STEP1 : 채권원장 조회 -->
+        <batch:step id="NBBMBND820JStep" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND820JReader"
+                    processor       ="NBBMBND820JProcessor" 
+                    writer          ="NBBMBND820JWriter1"
+                    commit-interval ="2000"
+                />
+            </batch:tasklet>
+            <batch:next on="*"      to="NBBMBND820JStep2"/>
+            <batch:next on="FAILED" to="NBBMBND820JStep2"/>
+        </batch:step>
+        
+        <!-- STEP2 : 채권상세 조회 -->
+        <batch:step id="NBBMBND820JStep2" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND820JReader2"
+                    processor       =""
+                    writer          ="NBBMBND820JWriter2"
+                    commit-interval ="2000"
+                />
+            </batch:tasklet>
+          <!-- <batch:next on="*"      to="NBBMBND820JStep3"/>
+            <batch:next on="FAILED" to="NBBMBND820JStep3"/> -->  
+        </batch:step>
+        
+        <!-- STEP3 : 채권원장 체크파일 조회 -->
+       <!-- <batch:step id="NBBMBND820JStep3" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND820JReader3"
+                    processor       ="NBBMBND820JProcessor3" 
+                    writer          ="NBBMBND820JWriter3"
+                    commit-interval ="2000"
+                />
+            </batch:tasklet>
+            <batch:next on="*"      to="NBBMBND820JStep4"/>
+            <batch:next on="FAILED" to="NBBMBND820JStep4"/>
+        </batch:step>-->  
+        
+        <!-- STEP4 : 채권상세 체크파일 조회 -->
+    <!--    <batch:step id="NBBMBND820JStep4" parent="eGovBaseStep" >
+            <batch:tasklet >
+                <batch:chunk 
+                    reader          ="NBBMBND820JReader4"
+                    processor       ="NBBMBND820JProcessor3" 
+                    writer          ="NBBMBND820JWriter4"
+                    commit-interval ="2000"
+                />
+            </batch:tasklet>
+        </batch:step>-->  
+        
+        
+    </batch:job>
+    
+  <!-- 읽기 (Step1) -->
+  <bean id="NBBMBND820JReader" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <property name="queryId" value="bmBatchMapper.BMBND001L001B" />
+    <property name="parameterValues">
+        <map>
+            <entry key="stddYm" value ="#{jobParameters['arg1']}" />
+        </map>
+    </property>
+  </bean>
+  
+  <!-- 읽기 (Step2) -->
+  <bean id="NBBMBND820JReader2" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <property name="queryId" value="bmBatchMapper.BMBND100L001B" />
+    <property name="parameterValues">
+        <map>
+            <entry key="stddYm" value ="#{jobExecutionContext['arg1']}" />
+        </map>
+    </property>
+  </bean>
+  
+  
+    <!-- 읽기 (Step3) -->
+  <bean id="NBBMBND820JReader3" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <property name="queryId" value="bmBatchMapper.BMBND820S001B" />
+    <property name="parameterValues">
+        <map>
+            <entry key="stddYmd" value ="#{jobParameters['arg2']}" />
+            <entry key="filePath" value ="/app/data/hli_data/and/send/NBBAT_JACS_BMBNDMST_#{jobParameters['arg2']}.dat" />
+        </map>
+    </property>
+  </bean>
+  
+    <!-- 읽기 (Step4) -->
+  <bean id="NBBMBND820JReader4" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+    <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <property name="queryId" value="bmBatchMapper.BMBND820S001B" />
+    <property name="parameterValues">
+        <map>
+            <entry key="stddYmd" value ="#{jobParameters['arg2']}" />
+            <entry key="filePath" value ="/app/data/hli_data/and/send/NBBAT_JACS_BMBNDDTL_#{jobParameters['arg2']}.dat" />
+        </map>
+    </property>
+  </bean>
+
+  <!-- 처리 (Step1) -->
+  <bean id="NBBMBND820JProcessor" class="com.hanwhalife.nbm.batch.processor.bm.NBBMBND820JProcessor" scope="step"/>
+  
+
+  <!-- 처리 (Step2) -->
+  <!-- <bean id="NBBMBND820JProcessor2" class="com.hanwhalife.nbm.batch.processor.bm.NBBMBND820JProcessor2" scope="step"/> -->
+  
+  <!-- 처리 (Step3) -->
+  <bean id="NBBMBND820JProcessor3" class="com.hanwhalife.nbm.batch.processor.bm.NBBMBND820JProcessor3" scope="step"/>
+  
+   <!-- 쓰기(Step1) -->
+   <bean id="NBBMBND820JWriter1" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+   <!-- <property name="resource" value="file:/hli_data/and/send/BMBNDMST_#{jobParameters['arg2']}.dat"></property> -->  
+     <property name="resource" value="file:/app/data/hli_data/and/send/NBBAT_JACS_BMBNDMST_#{jobParameters['arg2']}.dat"></property>
+     <property name="encoding" value="euc-kr"></property>
+     <property name="lineAggregator" >
+     <bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+         <property name="delimiter" value=""></property>
+         <property name="fieldExtractor">
+             <bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                 <property name="names" value="bondAdmnNo ,bondKindCode ,mattName,custId,custName,rsdnRgstNo,housTelNo,hpNo,custCnno,housAddr      
+                                    ,wkplAddr,custAddrTot,fnplPrno,etrsDate,fireDate,hdqtName,branName,brchName,chrgOrgnName,chgmName        
+                                    ,trstStrtDate,paymTrnnFee1,paymTrnnFee2,paymNfocFee,paymAdcnFee,paymEnrvAmt,paymNlinErmnAmt,paymErmnAmt,rcvyTrnnFee1,rcvyTrnnFee2    
+                                    ,redpNfocFee,redpAdcnFee,redpEnrvAmt,redpNlinErmnAmt,redpErmnAmt,poclRedpOcat,etcRedpOcat,prevSbat,fireAftrReam,accuFeeAmt      
+                                    ,guinSpayAmt,etcSbat,ucolBondBaln,dlgsDate,recvPrcp,finaOrgnCode,imagAcctNo,etc  "></property>
+             </bean>
+         </property>
+     </bean>
+     </property>
+   </bean>
+   
+   <!-- 쓰기 (Step2) -->
+   <bean id="NBBMBND820JWriter2" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+   <!-- <property name="resource" value="file:/hli_data/and/send/BMBNDDTL_#{jobParameters['arg2']}.dat"></property> -->  
+     <property name="resource" value="file:/app/data/hli_data/and/send/NBBAT_JACS_BMBNDDTL_#{jobParameters['arg2']}.dat"></property>
+     <property name="encoding" value="euc-kr"></property>
+     <property name="lineAggregator" >
+     <bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+         <property name="delimiter" value=""></property>
+         <property name="fieldExtractor">
+             <bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                 <property name="names" value="bondAdmnNo,      bondSeq,  fnplPrno,   insrPyno, rcvyYm, 
+                                               origIncoDvcdNm,  polyNo,   custName,   insrGonm, cnttDate, 
+                                               rcvyResnNm,      lapsDate, extnDate,   nmtnOrdr, ucolBondAmt, 
+                                               etc"></property>
+             </bean>
+         </property>
+     </bean>
+     </property>
+   </bean>
+   
+   
+      <!-- 쓰기 (Step3) -->
+   <bean id="NBBMBND820JWriter3" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+     <property name="resource" value="file:/app/data/hli_data/and/send/NBBAT_JACS_BMBNDMST_#{jobParameters['arg2']}.chk"></property>
+     <property name="encoding" value="euc-kr"></property>
+     <property name="lineAggregator" >
+     <bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+         <property name="delimiter" value=""></property>
+         <property name="fieldExtractor">
+             <bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                 <property name="names" value="interfaceId,  stddYmd,  rowCnt, state, extraInfo,  postFix"></property>
+             </bean>
+         </property>
+     </bean>
+     </property>
+   </bean>
+   
+       <!-- 쓰기 (Step4) -->
+   <bean id="NBBMBND820JWriter4" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+     <property name="resource" value="file:/app/data/hli_data/and/send/NBBAT_JACS_BMBNDDTL_#{jobParameters['arg2']}.chk"></property>
+     <property name="encoding" value="euc-kr"></property>
+     <property name="lineAggregator" >
+     <bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+         <property name="delimiter" value=""></property>
+         <property name="fieldExtractor">
+             <bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                 <property name="names" value="interfaceId,  stddYmd,  rowCnt, state, extraInfo,  postFix"></property>
+             </bean>
+         </property>
+     </bean>
+     </property>
+   </bean>
+  
+</beans>
