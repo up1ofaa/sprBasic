@@ -1,0 +1,358 @@
+/*
+ * Copyright 2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package testPj;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+
+
+/**
+ * <b>Description:</b><p>
+ * 구현 클래스의 설명을 입력합니다.
+ * @since 2021-06-10
+ * @version 1.0
+ * @author 홍선기(1073302)
+ * @see
+ * <pre>
+ * 개정이력(Modification Information)
+ * 수정일      수정자              수정내용
+ * ----------  ---------           -------------------------------
+ * 2021-06-10  0000000     최초생성
+ * </pre>
+ */
+
+public class HttpConnection {
+
+  /**
+   * 메소드 설명
+   * @param param1 - 파라메터 설명
+   * @param param2 - 파라메터 설명
+   * @return 반환값
+   * @exception Exception
+   */
+  
+
+  public static void main(String[] args) {
+    // TODO Auto-generated method stub
+    
+      HttpConnection http =new HttpConnection();
+      String result ="";
+      String url    ="http://10.10.153.190/rc/receiveVracRecvTelg.do";
+      //String url    ="https://nbm.hanwhalifefs.com/rc/receiveVracRecvTelg.do";
+      //String url    ="https://10.10.153.68/rc/receiveVracRecvTelg.do";
+    //int port      =41;
+      int port      =80;
+      String param  ="";
+      String teleNo ="0200300"; //입금처리 전문
+      //String teleNo ="0900100"; //조회 전문
+      
+      String header =http.setHeader(teleNo);
+      String body   =http.setBody(teleNo);
+      
+      String totalBody=header+body;
+      
+      LinkedHashMap<String, String> paramMap = new LinkedHashMap<String, String>();
+      paramMap.clear();
+      //paramMap.put("header", header);
+      paramMap.put("body", totalBody);
+     try {
+          System.out.println("map을 string으로 변환");
+          //param= http.mapToString(paramMap);
+          param= ""+"body="+totalBody;
+          //System.out.println("GET으로 데이터 가져오기");
+          //http.sendGet(url+"?"+param);
+          
+          System.out.println("POST로 데이터 가져오기");
+          result =http.sendPost(url, header, param);
+          //result =http.sendPost(url, header, totalBody);
+          System.out.println("가져온 결과:"+result);
+          if(result.length()>100) {
+            String rslHeader= result.substring(0, 100);
+            String rslBody=result.substring(100);
+            HashMap<String,Object> map= new HashMap<String,Object>();
+
+            map= http.resultToSmry(teleNo,rslBody);
+            System.out.println("result body:"+map.get("result").toString());
+            //System.out.println("result body 길이:"+map.get("result").toString().length());
+            
+          }
+          
+      }catch(Exception e) {
+        e.printStackTrace();
+        System.out.println(e.getMessage());
+      }
+    
+    
+  }//END-MAIN
+  
+  //Http get request
+  private void sendGet(String targetUrl) throws Exception{
+    URL url = new URL(targetUrl);
+    HttpURLConnection con =(HttpURLConnection) url.openConnection();     
+    String result="";
+    
+    con.setRequestMethod("GET");     //HTTP POST 메소드 설정
+    con.setRequestProperty("User-Agent", "");    
+    System.out.println("permission:"+con.getPermission());
+    //int responseCode =con.getResponseCode();
+    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));  
+    String inputLine;
+    StringBuffer response =new StringBuffer();
+    
+    while((inputLine= in.readLine())!=null) {
+      response.append(inputLine);
+    }
+    result =response.toString();
+    
+    in.close();
+    
+   // System.out.println("HTTP 응답코드  :"+responseCode);
+    System.out.println("HTTP body   :"+result); 
+    
+    
+  }//END- sendGet
+  
+  //Http post request
+  private String sendPost(String targetUrl, String header, String parameter) throws Exception{
+    String result="";
+    URL url = new URL(targetUrl);
+    HttpURLConnection con =(HttpURLConnection) url.openConnection();     
+    System.out.println("con.getUrl()============================================");
+    System.out.println(con.getURL());
+
+    String prameterEuc = new String (parameter.getBytes("EUC-KR"));
+    //String pramaEncStr = URLEncoder .encode(parameter, "EUC-KR");
+    
+    con.setDoInput(true);
+    con.setUseCaches(false);
+    con.setReadTimeout(1000);
+    con.setRequestMethod("POST"); //HTTP POST 메소드 설정 
+    con.setRequestProperty("User-Agent", "");
+    con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+    con.setRequestProperty("Content-Length", String.valueOf(parameter.getBytes().length));
+    con.setDoOutput(true); //파라미터 전달을 위한 설정   
+    con.setRequestProperty("header", header);
+    
+   
+   
+    //SEND POST REQUEST
+    System.out.println("outStream length =========================================");
+    System.out.println( String.valueOf(parameter.getBytes("EUC-KR").length));
+    //con.getOutputStream().write(parameter.getBytes("UTF-8"));
+    con.getOutputStream().write(parameter.getBytes("EUC-KR"));
+    System.out.println("EUC-KR변환전: "+parameter);
+    System.out.println("EUC-KR변환후: "+prameterEuc);
+    //DataOutputStream wr =new DataOutputStream(con.getOutputStream()); 
+    //wr.writeBytes(parameter);
+    //wr.flush();
+    //wr.close();
+    
+    int responseCode  = con.getResponseCode();
+   // BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(),"UTF-8"));  
+    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(),"euc-kr")); 
+    //BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(),"8859_1")); 
+    //BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+    String inputLine;
+    StringBuffer response =new StringBuffer();
+    
+    while((inputLine= in.readLine())!=null) {
+      response.append(inputLine);
+    }
+    result =response.toString();
+    //result = new String(result.getBytes(),"8859_1");
+    //result =new String(result.getBytes("euc-kr"));
+    //result= new String (result.getBytes("8859_1"));
+    String body="";
+    body=result;
+    //body=  new String (result.getBytes(),"euc-kr");
+   // body= new String (result.getBytes("8859_1"),"euc-kr");
+    //result= new String (result.getBytes("euc-kr"),"8859_1");
+    
+    in.close();
+    
+    System.out.println("HTTP 응답코드  :"+responseCode);
+    System.out.println("HTTP body      :"+body); 
+    System.out.println("HTTP body길이  :"+body.getBytes().length); 
+   // System.out.println("HTTP body길이2  :"+(new String(result.getBytes("euc-kr"),0,299)).length()); 
+    
+    
+    return result;
+  }//END -sendPost
+  
+  private String mapToString(LinkedHashMap<String, String> map) throws Exception{
+    String mapToStr="";
+    StringBuilder postData= new StringBuilder(); 
+    
+    for(Map.Entry<String,String> param: map.entrySet()) {
+      if(postData.length()!=0) { postData.append('&');}
+//          postData.append(URLEncoder.encode(param.getKey(),"UTF-8"));
+//          postData.append('=');
+//          postData.append(URLEncoder.encode(String.valueOf(param.getValue()),"UTF-8"));      
+          
+          postData.append(URLEncoder.encode(param.getKey(),"EUC-KR"));
+          postData.append('=');
+          postData.append(URLEncoder.encode(String.valueOf(param.getValue()),"EUC-KR"));      
+    }
+    /*
+    StringBuffer buffer =new StringBuffer();    
+    if(map!=null) {
+       Set key = map.keySet();
+       
+       for(Iterator iterator= key.iterator(); iterator.hasNext();) {
+           String keyName=(String) iterator.next();
+           String valueName =map.get(keyName);
+           buffer.append(keyName).append("=").append(valueName);
+       }
+       mapToStr=buffer.toString();
+    }*/
+    mapToStr= postData.toString();
+    System.out.println("mapToStr:"+mapToStr);
+    
+    return mapToStr;
+  }//end - mapToString
+  
+  private String setHeader(String teleNo) {
+    String header="";
+    String toYmd = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    String toHms = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
+    
+    String   dscrCode      = StringUtil.leftPadByte("KSNETVR",  9, " "); // 1.식별코드          : C  9    9  'KSNETVR' TRANSACTION CODE                                 
+    String   ntprCode      = StringUtil.leftPadByte("20007751", 8, " "); // 2.업체번호          : C  8   17  '20007751' 은행에서 업체별로 부여하는 고유번호                                
+    String   bankCd        = StringUtil.leftPadByte("88",       2, " "); // 3.은행코드          : C  2   19  전문발신기관코드 - 신한은행('88')                                                            
+    String   telgDvsnCode  = StringUtil.leftPadByte(teleNo,     7, " "); // 4.전문구분코드     : C  7  26   0900 100(입금/취소 요구),  0910 100(입금/취소응답)                                                              
+    String   trnsCnt       = StringUtil.leftPadByte("0",        1, "0"); // 5.송신횟수          : C  1   27  '0'으로 SET 함                                                                                               
+    String   telgSeqNo     = StringUtil.leftPadByte("17",        6, "0"); // 6.전문일련번호     : N  6   33  업체번호별, 일자별로 은행에서 UNIQUE하게 채번한 번호                                                         
+    String   dlgsDate      = StringUtil.leftPadByte(toYmd,      8, " "); // 7.전송일자          : C  8   41  당일                                                                                                         
+    String   dlgsTime      = StringUtil.leftPadByte(toHms,      6, " "); // 8.전송시간          : C  6   47  전문생성시각                                                                                                 
+    String   telgAnswCode  = StringUtil.leftPadByte(" ",        4, " "); // 9.응답코드          : C  4   51  정상-'0000', 이외에는 모두 불능코드로 인식                                                                   
+    String   bankAnswCode  = StringUtil.leftPadByte(" ",        4, " "); //10.은행응답코드     : C  4   55  은행 응답코드,10과 동일하게 세팅                                                                                    
+    String   selectDt      = StringUtil.leftPadByte(" ",        8, " "); //11.조회일자          : C  8   63  사용안함
+    String   inqrNo        = StringUtil.leftPadByte(" ",        6, " "); //12.조회번호          : C  6   69  취소시 원거래 번호
+    String   bankTel       = StringUtil.leftPadByte(" ",       15, " "); //13.은행전문번호     : C 15   84  사용안함
+    String   finaOrgnCode  = StringUtil.leftPadByte("088",      3, " "); //14.은행코드3자리   : C  3   87  은행코드 3자리(자통법 코드)
+    String   filler1       = StringUtil.leftPadByte(" ",       13, " "); //15.예비1       : C 13  100
+    
+    header=dscrCode+ntprCode+bankCd+telgDvsnCode+trnsCnt+telgSeqNo+dlgsDate+dlgsTime
+            +telgAnswCode+bankAnswCode+selectDt+inqrNo+bankTel+finaOrgnCode+filler1;
+    return header;
+  }//end- setHeader
+  
+  private String setBody(String teleNo) {
+    String body  = "";
+    String toYmd = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    String toHms = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));    
+    if(teleNo.equals("0200300")) {
+          String parnAcno       = StringUtil.leftPadByte(" ",  15, " "); //1.모계좌번호        : C 15  115
+          String conCnt         = StringUtil.leftPadByte("00",  2, " "); //2.조립건수           : C 2   117
+          String dlgsDvsnCode   = StringUtil.leftPadByte("20", 2, " "); //3.거래구분           : C  2  119 20:입금,30:출금,51:취소
+          String bankCd1        = StringUtil.leftPadByte("88", 2, " "); //4.은행코드(2자리):C  2  121
+          String dlgsAmt        = StringUtil.leftPadByte("155",  13, "0"); //5.입금금액          : N 13  134
+          String parnAcctBaln   = StringUtil.leftPadByte("0",  13, "0"); //6.모계좌잔액       : N 13  147
+          String hndlPntCode    = StringUtil.leftPadByte(" ",  6, " "); //7.입금지점코드    : C  6  153 사용안함
+          String rcvrName       = StringUtil.leftPadByte("테스터",  14, " "); //8.의뢰인명          : C 14  167 개인회생/법적조치 사건명 참조정보
+          String teleCkno       = StringUtil.leftPadByte(" ",  10, " "); //9.수표번호          : C 10  177
+          String cashRecvAmt    = StringUtil.leftPadByte("0",  13, "0"); //10.현금                : N 13  190
+          String otbkChekAmt    = StringUtil.leftPadByte("0",  13, "0"); //11.타행수표금액     : N 13  203
+          String drtsOtstAmt    = StringUtil.leftPadByte("0",  13, "0"); //12.가계수표기타     : N 13  216
+          String imagAcctNo     = StringUtil.leftPadByte("56214693276050", 16, " "); //13.가상계좌번호     : C 16  232 
+          String dlgsDate1      = StringUtil.leftPadByte(toYmd,8, " "); //14.거래일자          : C  8  240  당일                                                                                                         
+          String dlgsTime1      = StringUtil.leftPadByte(toHms,6, " "); //15.거래시간          : C  6  246  전문생성시각                          
+          String filler2        = StringUtil.leftPadByte(" "  ,6, " "); //16.예비2       : C  6  252  통장거래일련번호-사용안함
+          String finaOrgnCode1  = StringUtil.leftPadByte("088",3, " ");//17.은행코드3자리   : C  3  255  은행코드 3자리(자통법 코드)
+          String hndlPntCode1   = StringUtil.leftPadByte(" "  ,7, " ");//18.입금지점코드     : C  7  262 
+          String filler3        = StringUtil.leftPadByte(" "  ,38, " ");//19.예비3       : C 38  300
+          
+          body =parnAcno+conCnt+dlgsDvsnCode+bankCd1+dlgsAmt+parnAcctBaln+hndlPntCode+rcvrName
+              +teleCkno+cashRecvAmt+otbkChekAmt+drtsOtstAmt+imagAcctNo+dlgsDate1+dlgsTime1+filler2+finaOrgnCode1+hndlPntCode1+filler3;    
+    }else if(teleNo.equals("0900100")) {                                                                        
+          String imagAcctNo     = StringUtil.leftPadByte("56214693270590", 16, " "); //1.가상계좌번호     : C 16  16                                              
+          String virtAcctName   = StringUtil.leftPadByte(" "  ,30 , " "); //2.예금주명           : C 30  46                                          
+          String bankCd1        = StringUtil.leftPadByte("88" , 2 , " "); //3.은행코드(2자리): C  2  48                                               
+          String filler2        = StringUtil.leftPadByte(" "  ,22 , " "); //4.예비2       : C 22  70 시작일자, 종료일자, 종료시간 - 사용안함                     
+          String dlgsAmt        = StringUtil.leftPadByte("0"  ,13 , "0"); //5.입금금액           : N 13  83                                         
+          String filler3        = StringUtil.leftPadByte(" "  ,2  , " "); //6.구분코드            : C 2  85 사용안함                                   
+          String dlkdCode       = StringUtil.leftPadByte("10" ,2  , " "); //7.거래종류           : C  2  87 10:수취,20:입금,51:취소                            
+          String rcvrName       = StringUtil.leftPadByte("라익락"  ,20 , " "); //8.의뢰인명           : C 20  107     
+          //String rcvrName       = StringUtil.leftPadByte("占쏙옙占쏙옙占쏙옙"  ,20 , " "); //8.의뢰인명           : C 20  107     
+          String finaOrgnCode1  = StringUtil.leftPadByte("088",3  , " "); //9.은행코드3자리   : C  3  110                                              
+          String filler4        = StringUtil.leftPadByte(" "  ,90 , " "); //10.예비4       : C 90  200    
+          body= imagAcctNo+virtAcctName+bankCd1+filler2+dlgsAmt+filler3+dlkdCode+rcvrName+finaOrgnCode1+filler4;      
+    }
+    return body;
+  }//end-setBody
+  
+
+  
+  private HashMap<String,Object> resultToSmry(String teleNo,String result) throws Exception{
+
+    HashMap<String,Object> map= new HashMap<String,Object>();
+    if(result.length() >=200) {
+         map.clear();
+         if(teleNo.equals("0200300")) {
+             map.put("모계좌번호"     , result.substring(0  ,15));
+             map.put("조립건수"       , Integer.parseInt(result.substring(15 ,17)));
+             map.put("거래구분"       , result.substring(17 ,19));
+             map.put("은행코드2자리"  , result.substring(19 ,21));
+             map.put("입금금액"       , Integer.parseInt(result.substring(21 ,34)));
+             map.put("모계좌잔액"     , Integer.parseInt(result.substring(34 ,47)));
+             map.put("입금지점코드"   , result.substring(47 ,53));
+             map.put("의뢰인명"       , result.substring(53 ,67));
+             map.put("수표번호"       , result.substring(67 ,77));
+             map.put("현금"           , Integer.parseInt(result.substring(77 ,90)));
+             map.put("타행수표금액"   , Integer.parseInt(result.substring(90 ,103)));
+             map.put("각계수표기타"   , Integer.parseInt(result.substring(103,116)));
+             map.put("가상계좌번호"   , result.substring(116,132));
+             map.put("거래일자"       , result.substring(132,140));
+             map.put("거래시간"       , result.substring(140,146));
+             map.put("예비2"          , result.substring(146,152));
+             map.put("은행코드3자리"  , result.substring(152,155));
+             map.put("입금지점코드"   , result.substring(155,162));
+             map.put("예비3"          , result.substring(162,200));
+         }else if(teleNo.equals("0900100")) { 
+             map.put("가상계좌번호"  , result.substring(0  ,16));
+             map.put("예금주명"      , result.substring(16 ,46));
+             map.put("은행코드"      , result.substring(46 ,48));
+             map.put("예비2"         , result.substring(48 ,70));
+             map.put("입금금액"      , Integer.parseInt(result.substring(70 ,83)));
+             map.put("구분코드"      , result.substring(83 ,85));
+             map.put("거래종류"      , result.substring(85 ,87));
+             map.put("의뢰인명"      , result.substring(87 ,107));
+             map.put("은행코드3자리" , result.substring(107 ,110));
+             map.put("예비4"         , result.substring(110 ,200));
+         }else {
+           map.clear();
+           map.put("result", result);
+         }
+
+    }else {
+          map.clear();
+          map.put("result", result);
+    }
+    return map;
+  }//end resultToSmry
+  
+
+}//END-CLASS
