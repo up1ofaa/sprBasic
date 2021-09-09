@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:batch="http://www.springframework.org/schema/batch" xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/batch
+    http://www.springframework.org/schema/batch/spring-batch.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util.xsd
+    ">
+    <!-- 
+    DB to FILE 일마감 ESB 전송
+    1. jobParameters : codeGrp
+    2. reader : rcBatchMapper.RCRCC300L001B 호출
+    3. processor : 1. NBRCRCC100JProcessor 처리
+                   2. NBRCRCC100JProcessor2 처리
+    4. writer : rcBatchMapper.RCRCC300I001B 호출
+     -->
+    <import resource="../abstract/eGovBase.xml" />
+    <import resource="classpath:/batch/context-batch-job-launcher.xml" />
+    
+    <util:properties id="filepath" location="classpath:/com.hanwhalife.nbm.service.properties" />
+    
+    <batch:job id="NBRCRCC100J" parent="eGovBaseJob">
+        <!-- 미수금발생  -->
+        <batch:step id="NBRCRCC100JStep1" parent="eGovBaseStep">
+            <tasklet >
+            <!--<chunk reader="NBRCRCC100JReader1" processor="NBRCRCC100JProcessor1" writer="NBRCRCC100JWriter1" commit-interval="10"/> -->    
+                <chunk reader="NBRCRCC100JReader1" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter1" commit-interval="10"/>
+            </tasklet>
+           <batch:next on="*" to="NBRCRCC100JStep2"/>   
+       <!--  <batch:next on="*" to="NBRCRCC100JStep3"/> --> 
+            <batch:end on="FAILED"/>
+        </batch:step>
+        <!-- 일반회수  -->
+        <batch:step id="NBRCRCC100JStep2">
+            <tasklet >
+                <chunk reader="NBRCRCC100JReader2" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter2" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep3"/>
+            <batch:end on="FAILED"/>
+        </batch:step> 
+        <!-- 가상계좌  -->
+        <batch:step id="NBRCRCC100JStep3">
+            <tasklet >
+            <!-- <chunk reader="NBRCRCC100JReader3" processor="NBRCRCC100JProcessor1" writer="NBRCRCC100JWriter3" commit-interval="10"/> -->    
+                <chunk reader="NBRCRCC100JReader3" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter3" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep4"/>
+            <batch:end on="FAILED"/>
+        </batch:step> 
+        <!-- 대손상각  -->       
+        <batch:step id="NBRCRCC100JStep4">
+            <tasklet >
+            <!--<chunk reader="NBRCRCC100JReader4" processor="NBRCRCC100JProcessor1" writer="NBRCRCC100JWriter4" commit-interval="10"/>-->
+                <chunk reader="NBRCRCC100JReader4" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter4" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep5"/>
+            <batch:end on="FAILED"/>
+        </batch:step> 
+        <!-- 결산조정 -->       
+        <batch:step id="NBRCRCC100JStep5">
+            <tasklet >
+         <!--   <chunk reader="NBRCRCC100JReader5" processor="NBRCRCC100JProcessor1" writer="NBRCRCC100JWriter5" commit-interval="10"/> -->       
+                <chunk reader="NBRCRCC100JReader5" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter5" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep9"/>
+            <batch:end on="FAILED"/>
+        </batch:step> 
+        <!-- 과납송금 -->       
+       <!--  <batch:step id="NBRCRCC100JStep6">
+            <tasklet >       
+                <chunk reader="NBRCRCC100JReader6" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter6" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep7"/>
+            <batch:end on="FAILED"/>
+        </batch:step> --> 
+        <!-- 법무비용송금 -->       
+        <!-- <batch:step id="NBRCRCC100JStep7">
+            <tasklet >     
+                <chunk reader="NBRCRCC100JReader7" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter7" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep8"/>
+            <batch:end on="FAILED"/>
+        </batch:step> -->
+        <!-- 법무비용송금_정산 -->        
+        <!-- <batch:step id="NBRCRCC100JStep8">
+            <tasklet >
+                <chunk reader="NBRCRCC100JReader8" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter8" commit-interval="10"/>
+            </tasklet> 
+            <batch:next on="*" to="NBRCRCC100JStep10"/>
+            <batch:end on="FAILED"/>
+        </batch:step> -->
+        <!-- ESB 파일전송 to ERP// 로직제거 20210607 -->           
+       <!--  <batch:step id="NBRCRCC100JStep9">
+            <tasklet ref="clogEsbBatchTasklet" /> 
+            <batch:next on="*" to="NBRCRCC100JStep10"/>
+        </batch:step> 
+        -->        
+        <!-- ERP URL전송(TB_RCRCC200)  -->
+         <batch:step id="NBRCRCC100JStep9">
+            <tasklet ref="clogErpBatchTasklet" /> 
+            <batch:next on="*" to="NBRCRCC100JStep10"/>
+        </batch:step> 
+              
+        <!-- 채권기본 시효완성예정일자 변경 -->
+        <batch:step id="NBRCRCC100JStep10">
+            <tasklet >
+                <chunk reader="NBRCRCC100JReader10" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter10" commit-interval="10"/>
+            </tasklet>
+            <batch:next on="*" to="NBRCRCC100JStep11"/>
+            <batch:end on="FAILED"/>
+        </batch:step>
+        <!-- 채권기본 이력생성 -->
+        <batch:step id="NBRCRCC100JStep11">
+            <tasklet >
+                <chunk reader="NBRCRCC100JReader11" processor="NBRCRCC100JProcessor" writer="NBRCRCC100JWriter11" commit-interval="10"/>
+            </tasklet>            
+            <batch:next on="*" to="NBRCRCC100JStep12"/>
+            <batch:end on="FAILED"/>
+        </batch:step>          
+        <!-- 보증보험 수납금액 변경 -->
+        <batch:step id="NBRCRCC100JStep12">
+            <tasklet >
+                <chunk reader="NBRCRCC100JReader12" processor="NBRCRCC100JProcessor2" writer="NBRCRCC100JWriter12" commit-interval="10"/>
+            </tasklet>            
+        </batch:step>   
+    </batch:job> 
+     
+    <!-- Processor 파일 포맷-->
+    <bean id="NBRCRCC100JProcessor1" class="org.springframework.batch.item.support.CompositeItemProcessor">
+        <property name="delegates">
+            <list>
+                <bean class="com.hanwhalife.nbm.batch.processor.rc.NBRCRCC100JProcessor1"></bean>
+            </list>
+        </property>
+    </bean>             
+     
+    <!-- 읽기 -->
+    <bean id="NBRCRCC100JReader1" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+    <!-- <property name="queryId" value="rcBatchMapper.RCRCC300L001B" /> -->  
+      <property name="queryId" value="rcBatchMapper.RCRCC300L010B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB001" />
+            </map>
+      </property>
+    </bean>    
+    <!-- 쓰기 --> 
+        <!-- 
+    <bean id="NBRCRCC100JWriter1" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+        <property name="resource" value="file:#{filepath['fileBatchPath']}NB001_#{jobParameters['arg1']}_#{jobParameters['arg2']}.txt"></property>
+        <property name="encoding" value="euc-kr"></property>
+        <property name="lineAggregator" >
+            <bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator">
+            </bean>
+        </property>
+    </bean>         
+     --> 
+    <bean id="NBRCRCC100JWriter1" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+        <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>  
+
+    <!-- 읽기 -->
+    <bean id="NBRCRCC100JReader2" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <!-- <property name="queryId" value="rcBatchMapper.RCRCC300L001B" /> -->  
+      <property name="queryId" value="rcBatchMapper.RCRCC300L020B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB002" />
+            </map>
+      </property>
+    </bean>    
+    <!-- 쓰기 --> 
+    <!-- 
+      <bean id="NBRCRCC100JWriter2" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+        <property name="resource" value="file:#{filepath['fileBatchPath']}NB002_#{jobParameters['arg1']}_#{jobParameters['arg2']}.txt"></property>
+        <property name="encoding" value="euc-kr"></property>
+        <property name="lineAggregator" >
+            <bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator">
+            </bean>
+        </property>
+         </bean> 
+     --> 
+    <bean id="NBRCRCC100JWriter2" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+        <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>            
+    
+    <!-- 읽기 -->
+    <bean id="NBRCRCC100JReader3" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+       <!-- <property name="queryId" value="rcBatchMapper.RCRCC300L001B" /> -->  
+      <property name="queryId" value="rcBatchMapper.RCRCC300L030B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB003" />
+            </map>
+      </property>
+    </bean>
+    <!-- 쓰기 -->  
+    <!-- 
+      <bean id="NBRCRCC100JWriter3" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+         <property name="resource" value="file:#{filepath['fileBatchPath']}NB003_#{jobParameters['arg1']}_#{jobParameters['arg2']}.txt"></property>
+        <property name="encoding" value="euc-kr"></property>
+        <property name="lineAggregator" >
+            <bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator">
+            </bean>
+        </property> 
+      </bean>
+         -->
+    <bean id="NBRCRCC100JWriter3" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">    
+        <property name="assertUpdates" value="false"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+        <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>          
+    
+    <!-- 읽기 -->
+    <bean id="NBRCRCC100JReader4" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+   <!-- <property name="queryId" value="rcBatchMapper.RCRCC300L001B" /> -->  
+      <property name="queryId" value="rcBatchMapper.RCRCC300L040B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB004" />
+            </map>
+      </property>
+    </bean>
+    <!-- 쓰기 -->  
+  <!-- 
+    <bean id="NBRCRCC100JWriter4" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+        <property name="resource" value="file:#{filepath['fileBatchPath']}NB004_#{jobParameters['arg1']}_#{jobParameters['arg2']}.txt"></property>
+        <property name="encoding" value="euc-kr"></property>
+        <property name="lineAggregator" >
+            <bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator">
+            </bean>
+        </property>
+    </bean>
+     -->  
+    <bean id="NBRCRCC100JWriter4" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+          <property name="assertUpdates" value="false"></property>
+          <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+          <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>                 
+         
+    <!-- 읽기 -->
+    <bean id="NBRCRCC100JReader5" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+       <!-- <property name="queryId" value="rcBatchMapper.RCRCC300L001B" /> -->  
+      <property name="queryId" value="rcBatchMapper.RCRCC300L050B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB005" />
+            </map>
+      </property>
+    </bean>
+    <!-- 쓰기 -->  
+ <!-- 
+    <bean id="NBRCRCC100JWriter5" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+        <property name="resource" value="file:#{filepath['fileBatchPath']}NB005_#{jobParameters['arg1']}_#{jobParameters['arg2']}.txt"></property>
+        <property name="encoding" value="euc-kr"></property>
+        <property name="lineAggregator" >
+            <bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator">
+            </bean>
+        </property>
+    </bean>    
+  -->      
+     <bean id="NBRCRCC100JWriter5" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+	        <property name="assertUpdates" value="false"></property>
+	        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+          <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>        
+         
+<!-- 
+    <bean id="NBRCRCC100JReader6" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="queryId" value="rcBatchMapper.RCRCC300L060B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB006" />
+            </map>
+      </property>
+    </bean>
+    <bean id="NBRCRCC100JWriter6" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+         <property name="assertUpdates" value="false"></property>
+          <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+          <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean> 
+    <bean id="NBRCRCC100JReader7" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="queryId" value="rcBatchMapper.RCRCC300L070B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB007" />
+            </map>
+      </property>
+    </bean> 
+     <bean id="NBRCRCC100JWriter7" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+          <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+          <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>
+    <bean id="NBRCRCC100JReader8" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="queryId" value="rcBatchMapper.RCRCC300L080B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+                <entry key="dlgsTypeCode" value ="NB008" />
+            </map>
+      </property>
+    </bean>      
+    <bean id="NBRCRCC100JWriter8" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+          <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+          <property name="statementId" value="rcBatchMapper.RCRCC200I002B" />
+    </bean>    
+ -->        
+    <!-- ESB파일전송부 제거          
+    <bean id="clogEsbBatchTasklet" class="com.hanwhalife.nbm.batch.tasklet.ClogEsbBatchTasklet">
+        <property name="directory" value="file:#{filepath['fileBatchPath']}" />
+    </bean>
+     -->  
+       <!-- ERP 전송부 제거 -->          
+    <bean id="clogErpBatchTasklet" class="com.hanwhalife.nbm.batch.tasklet.ClogErpBatchTasklet">
+    </bean>
+       
+        
+    <!-- 읽기 --> 
+    <bean id="NBRCRCC100JReader10" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="queryId" value="rcBatchMapper.BMBND100L001B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+            </map>
+      </property>
+    </bean>
+    
+    <!-- Processor-->
+    <bean id="NBRCRCC100JProcessor" class="org.springframework.batch.item.support.CompositeItemProcessor">
+        <property name="delegates">
+            <list>
+                <bean class="com.hanwhalife.nbm.batch.processor.rc.NBRCRCC100JProcessor"></bean>
+            </list>
+        </property>
+    </bean>    
+    
+    <!-- 쓰기 -->
+    <bean id="NBRCRCC100JWriter10" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+        <property name="statementId" value="rcBatchMapper.BMBND001U001B" />
+    </bean>
+    
+    <bean id="NBRCRCC100JReader11" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="queryId" value="rcBatchMapper.BMBND100L002B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+            </map>
+      </property>
+    </bean>
+        
+    <!-- 쓰기 -->
+    <bean id="NBRCRCC100JWriter11" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+        <property name="statementId" value="rcBatchMapper.BMBND002I001" />
+    </bean>
+    
+    <!-- 읽기 --> 
+    <bean id="NBRCRCC100JReader12" class="org.mybatis.spring.batch.MyBatisCursorItemReader" scope="step">
+      <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+      <property name="queryId" value="rcBatchMapper.BMBMD040L001B" />
+      <property name="parameterValues">
+            <map>
+                <entry key="slipDate" value ="#{jobParameters['arg1']}" />
+            </map>
+      </property>
+    </bean>
+    
+    <!-- Processor -->
+    <bean id="NBRCRCC100JProcessor2" class="org.springframework.batch.item.support.CompositeItemProcessor">
+        <property name="delegates">
+            <list>
+                <bean class="com.hanwhalife.nbm.batch.processor.rc.NBRCRCC100JProcessor2"></bean>
+            </list>
+        </property>
+    </bean>    
+    
+    <!-- 쓰기 -->
+    <bean id="NBRCRCC100JWriter12" class="org.mybatis.spring.batch.MyBatisBatchItemWriter" scope="step">
+        <property name="assertUpdates" value="false"></property>
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryBatch" />
+        <property name="statementId" value="rcBatchMapper.BMBND011U001B" />
+    </bean>    
+    
+    <bean id="commonComponent" class="com.hanwhalife.nbm.service.cm.com.CommonComponent" />
+    
+</beans>
