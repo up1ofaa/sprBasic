@@ -1,0 +1,317 @@
+/*
+ * Copyright 2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package testPj;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+
+
+/**
+ * <b>Description:</b><p>
+ * 구현 클래스의 설명을 입력합니다.
+ * @since 2021-06-10
+ * @version 1.0
+ * @author 홍선기(1073302)
+ * @see
+ * <pre>
+ * 개정이력(Modification Information)
+ * 수정일      수정자              수정내용
+ * ----------  ---------           -------------------------------
+ * 2021-06-10  0000000     최초생성
+ * </pre>
+ */
+
+public class HttpConnFromAnd {
+
+  /**
+   * 메소드 설명
+   * @param param1 - 파라메터 설명
+   * @param param2 - 파라메터 설명
+   * @return 반환값
+   * @exception Exception
+   */
+ static String bondAdminNo="";
+ static String custId="";
+ static int    pageNo=0;
+ static int    recvCnt=0;
+  
+  
+  public static void main(String[] args) {
+    // TODO Auto-generated method stub
+    
+      HttpConnFromAnd com =new HttpConnFromAnd();
+      String result ="";
+      //AndRntlController.java 참조
+      String url    ="http://10.10.153.190/rc/receiveAndReq.do";
+      //int port    =41;//shell상에서
+      int port      =80;
+      String param="";
+      //String tnsCode="0502";
+      String tnsCode="0500";
+      
+      String header001     = "";
+      String toYmd = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      String toHms = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
+      
+      String telgLeng     = StringUtil.leftPadByte("00100",    5, " "); // 1.TELG_LENG 전문길이               
+      String sysId        = StringUtil.leftPadByte("000",      3, " "); // 2.SYS_ID 시스템ID                                  
+      String trrvTelgDvsn = StringUtil.leftPadByte(" ",        1, " "); // 3 TRRV_TELG_DVSN                                                
+      String telgSpecCode = StringUtil.leftPadByte(" ",        4, " "); // 4.TELG_SPEC_CODE                                                           
+      String dlgsDvsnCode = StringUtil.leftPadByte(tnsCode,    4, " "); // 5.DLGS_DVSN_CODE 전문구분코드                                                             
+      String trnsOrgnCode = StringUtil.leftPadByte(" ",        3, " "); // 6.TRNS_ORGN_CODE                                                        
+      String rqstOrgnCode = StringUtil.leftPadByte(" ",        5, " "); // 7.RQST_ORGN_CODE                                                             
+      String telgTrnmDate = StringUtil.leftPadByte(toYmd,      8, " "); // 8.TELG_TRNM_DATE                                                             
+      String telgTrnmTime = StringUtil.leftPadByte(toHms,      6, " "); // 9.TELG_TRNM_TIME                                                             
+      String dlmnId       = StringUtil.leftPadByte(" ",        8, " "); //10.DLMN_ID                                                               
+      String telgNo       = StringUtil.leftPadByte(" ",       12, " "); //11.TELG_NO        
+      String nscd         = StringUtil.leftPadByte(" ",        3, " "); //12.NSCD        
+      String filler1      = StringUtil.leftPadByte(" ",       38, " "); //13.FILLER1    
+    
+      
+      header001=telgLeng+sysId+trrvTelgDvsn+telgSpecCode+dlgsDvsnCode+trnsOrgnCode+rqstOrgnCode+rqstOrgnCode
+              +telgTrnmDate+telgTrnmTime+dlmnId+telgNo+nscd+filler1;
+      
+      
+      String data001     = "";
+      String data002     = "";
+     
+     if(dlgsDvsnCode.equals("0500")) {
+       data001           = "10202107000001"; //채권관리번호 BOND_ADMN_NO
+       data002           = "1"; //페이지번호 PAGE_NO 
+     }else if(dlgsDvsnCode.equals("0502")) {
+       data001           = "10201911000776"; //채권관리번호 BOND_ADMN_NO
+       data002           = "2002220962"; //고객번호 CUST_ID
+     }
+      
+  LinkedHashMap<String, String> paramMap = new LinkedHashMap<String, String>();
+      paramMap.clear();
+      paramMap.put("header001", header001);
+      paramMap.put("data001", data001);
+      paramMap.put("data002", data002);
+     
+    try {
+          System.out.println("map을 string으로 변환");
+          param= com.mapToString(paramMap);
+          //System.out.println("GET으로 데이터 가져오기");
+          //http.sendGet(url+"?"+param);
+          
+          System.out.println("POST로 데이터 가져오기");
+          result =com.sendPost(url, param);
+          if(dlgsDvsnCode.equals("0500")) {
+            ArrayList<HashMap> list = new ArrayList<HashMap>(); 
+            list=com.result0500ToSmry(result);
+              System.out.println("가져온 결과:"+result);
+              System.out.println("bondAdminNo:"+bondAdminNo);
+              System.out.println("pageNo     :"+pageNo);
+              System.out.println("recvCnt    :"+recvCnt);
+            for(int i=0; i<list.size(); i++) {
+              System.out.println(i+"번째줄   :"+list.get(i).toString());
+            }            
+          }else if(dlgsDvsnCode.equals("0502")) {
+            HashMap<String,Object> map= new HashMap<String,Object>();
+            map=com.result0502ToSmry(result);
+              System.out.println("가져온 결과:"+result);
+              System.out.println("bondAdminNo:"+bondAdminNo);
+              System.out.println("custId     :"+custId);
+              System.out.println("결과       :"+map.toString());
+          }//end-if
+          
+          //System.out.println("가져온 결과:"+result);
+      }catch(Exception e) {
+        e.printStackTrace();
+        System.out.println(e.getMessage());
+      }
+    
+    
+  }//END-MAIN
+  
+  //Http get request
+  private void sendGet(String targetUrl) throws Exception{
+    URL url = new URL(targetUrl);
+    HttpURLConnection con =(HttpURLConnection) url.openConnection();     
+    String result="";
+    
+    con.setRequestMethod("GET");     //HTTP POST 메소드 설정
+    con.setRequestProperty("User-Agent", "");
+    
+    System.out.println("permission:"+con.getPermission());
+    //int responseCode =con.getResponseCode();
+    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));  
+    String inputLine;
+    StringBuffer response =new StringBuffer();
+    
+    while((inputLine= in.readLine())!=null) {
+      response.append(inputLine);
+    }
+    result =response.toString();
+    
+    in.close();
+    
+   // System.out.println("HTTP 응답코드  :"+responseCode);
+    System.out.println("HTTP body   :"+result); 
+    
+    
+  }//END- sendGet
+  
+  //Http post request
+  private String sendPost(String targetUrl,  String parameter) throws Exception{
+    String result="";
+    URL url = new URL(targetUrl);
+    HttpURLConnection con =(HttpURLConnection) url.openConnection();     
+    System.out.println("con.getUrl()============================================");
+    System.out.println(con.getURL());
+
+    
+    con.setDoInput(true);
+    con.setUseCaches(false);
+    con.setReadTimeout(1000);
+    con.setRequestMethod("POST"); //HTTP POST 메소드 설정 
+    con.setRequestProperty("User-Agent", "");
+    con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+    con.setRequestProperty("Content-Length", String.valueOf(parameter.getBytes().length));
+    con.setDoOutput(true); //파라미터 전달을 위한 설정    
+    
+    //SEND POST REQUEST
+    System.out.println("outStream length =========================================");
+    System.out.println( String.valueOf(parameter.getBytes().length));
+    System.out.println( "send_data:"+new String(parameter.getBytes("EUC-KR")));
+    //con.getOutputStream().write(parameter.getBytes("UTF-8"));
+    con.getOutputStream().write(parameter.getBytes("EUC-KR"));
+    
+    int responseCode =con.getResponseCode();
+    //BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(),"UTF-8"));  
+    //BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));  
+    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream(),"EUC-KR"));  
+    String inputLine;
+    StringBuffer response =new StringBuffer();
+    
+    while((inputLine= in.readLine())!=null) {
+      response.append(inputLine);
+    }
+    result =response.toString();
+    
+    in.close();
+    
+    System.out.println("HTTP 응답코드  :"+responseCode);
+    System.out.println("HTTP body      :"+result);    
+    
+    return result;
+  }//END -sendPost
+  
+  private String mapToString(LinkedHashMap<String, String> map) throws Exception{
+    String mapToStr="";
+    StringBuilder postData= new StringBuilder(); 
+    
+    for(Map.Entry<String,String> param: map.entrySet()) {
+      if(postData.length()!=0) { postData.append('&');}
+          postData.append(URLEncoder.encode(param.getKey(),"UTF-8"));
+          postData.append('=');
+          postData.append(URLEncoder.encode(String.valueOf(param.getValue()),"UTF-8"));      
+    }
+    mapToStr= postData.toString();
+    System.out.println("mapToStr:"+mapToStr);
+    
+    return mapToStr;
+  }
+  
+  private   ArrayList<HashMap>  result0500ToSmry(String result) throws Exception{
+    String str ="&";
+    String[] datas=result.split(str);
+    ArrayList<String> list = new ArrayList<String>(); 
+    ArrayList<HashMap> mapList = new ArrayList<HashMap>(); 
+    init_0500();
+    
+    HashMap<String,Object> map= new HashMap<String,Object>();
+    if(datas.length>4) {
+      for(int i=0; i<datas.length; i++ ) {
+       String[] data =datas[i].split("=");
+       list.add(data[1]);
+      }
+      bondAdminNo=list.get(1);
+      pageNo =Integer.parseInt(list.get(2).trim());
+      recvCnt=Integer.parseInt(list.get(3).trim());
+    
+      if(recvCnt>0) {
+        for(int j=4;j<(4+8*recvCnt); j=j+8 ) {
+            map.clear();
+            map.put("RECV_DATE"     , list.get(j));
+            map.put("DLGS_AMT"      , Integer.parseInt(list.get(j+1)));
+            map.put("RECV_PRCP"     , Integer.parseInt(list.get(j+2)));
+            map.put("RECV_AMT"      , Integer.parseInt(list.get(j+3)));
+            map.put("DLGS_COST"     , Integer.parseInt(list.get(j+4)));
+            map.put("DLGS_DPST_AMT" , Integer.parseInt(list.get(j+5)));
+            map.put("DPAT_INTE_RCAT", Integer.parseInt(list.get(j+6)));
+            map.put("UCIT_RCAT"     , Integer.parseInt(list.get(j+7)));
+            mapList.add(map);
+        }        
+      }      
+    }else {
+            map.clear();
+            map.put("result", result);
+            mapList.add(map);
+    }
+    
+    return mapList;
+  }
+  
+  private HashMap<String,Object> result0502ToSmry(String result) throws Exception{
+    String str ="&";
+    String[] datas=result.split(str);
+    ArrayList<String> list = new ArrayList<String>(); 
+    HashMap<String,Object> map= new HashMap<String,Object>();
+    init_0502();
+    
+    if(datas.length>3) {
+      for(int i=0; i<datas.length; i++ ) {
+        String[] data =datas[i].split("=");
+        list.add(data[1]);
+       }
+         bondAdminNo=list.get(1);
+         custId=list.get(2);
+         map.clear();
+         map.put("UCOL_PRCP_BALN", Integer.parseInt(list.get(3)));
+         map.put("INTE_AMT"      , Integer.parseInt(list.get(4)));
+         map.put("JDAC_BALN"     , Integer.parseInt(list.get(5)));
+         map.put("UCOL_DPAT_BALN", Integer.parseInt(list.get(6)));       
+    }else {
+          map.clear();
+          map.put("result", result);
+    }
+    return map;
+  }
+  
+  public void init_0500(){
+      bondAdminNo="";   
+      pageNo=0;         
+      recvCnt=0;
+  } 
+  
+  public void init_0502(){
+      bondAdminNo="";   
+      custId="";   
+  }
+
+}//END-CLASS
