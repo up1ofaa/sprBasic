@@ -21,34 +21,44 @@ public class test2 {
     //변수선언
     String filePath ="/app/data/nbmImg/";
     
-    int recCnt=0;
-    int succCnt=0;
+ 
     int failCnt=0;
+    INT workCnt=0;
     
-    while(failCnt>=50){
-        
-        BufferedReader br = null;
-        StringBuffer sb = new StringBuffer();
-        try {
-          br =new BufferedReader(new FileReader(filePath));
+    while(workCnt<5 && failCnt>=50){
+       try {
+         failCnt=executeFailCnt(filePath);
+        }finally {
+         workCnt++;
+         System.out.println();
+        }//end-try
+    }
+    
+  }//end-main
+
+  private static int executeFailCnt(String filePath){
+   int succCnt=0;
+   int failCnt=0;
+   int recCnt=0;
+    BufferedReader br =null;
+    StringBuffer sb =new StringBuffer();
+    int recCnt=0;
+    try{
+      br =new BufferedReader(new FileReader(filePath));
           
           String line =null;
           while((line=br.readLine())!=null) {
             System.out.println(line);
             sb.append(line);
-          }
-          
-          succCnt++;
-        }catch(Exception e){
-         failCnt++; 
-        }finally {
-          
-          recCnt++;
-          System.out.println();
-        }//end-try
-
-    }
-    
-  }//end-main
-
-}//end-main
+          } 
+       succCnt++;
+    }catch(Exception e){
+     failCnt++; 
+    }finally{
+      recCnt++; 
+     return failCnt;
+    } 
+  }  
+  
+  
+}//end-class
